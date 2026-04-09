@@ -688,42 +688,38 @@
     }
 
     async function login(){
-      limparLoginMsg();
+  limparLoginMsg();
 
-      const matricula = document.getElementById("matricula").value.trim();
-      const senha = document.getElementById("senha").value.trim();
+  const matricula = document.getElementById("matricula").value.trim();
+  const senha = document.getElementById("senha").value.trim();
 
-      if (!matricula || !senha){
-        setLoginMsg("Informe matrícula e senha.");
-        return;
-      }
+  if (!matricula || !senha){
+    setLoginMsg("Informe matrícula e senha.");
+    return;
+  }
 
-      const btn = document.querySelector(".btn-primary");
-      btn.disabled = true;
-      btn.textContent = "Entrando...";
+  try{
+    const res = await fetch(API_BASE + "/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        usuario: matricula,
+        senha: senha
+      })
+    });
 
-      try{
-        const res = await fetch(API_BASE + "/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matricula, senha, origem: "ipeo" })
-        });
+    const data = await res.json();
 
-        const data = await res.json();
-
-        if (!res.ok || !data.ok){
-          throw new Error(data.error || "Falha no login");
-        }
-
-        setToken(data.token);
-        await validarSessao();
-      }catch(err){
-        setLoginMsg(err.message || "Não foi possível entrar.");
-      }finally{
-        btn.disabled = false;
-        btn.textContent = "Entrar";
-      }
+    if (!res.ok || (!data.ok && !data.sucesso)) {
+      throw new Error(data.error || data.erro || "Falha no login");
     }
+
+    localStorage.setItem("ipeo_token", data.token);
+    await validarSessao();
+  } catch (err) {
+    setLoginMsg(err.message || "Não foi possível entrar.");
+  }
+}
 
     async function validarSessao(){
       try{
