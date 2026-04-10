@@ -790,7 +790,7 @@
                 </tr>
               </thead>
               <tbody id="tbodyResultados">
-                <tr><td colspan="10" class="empty">Nenhum dado carregado.</td></tr>
+                <tr><td colspan="14" class="empty">Nenhum dado carregado.</td></tr>
               </tbody>
             </table>
           </div>
@@ -815,10 +815,12 @@
             </div>
 
             <div class="help">
-              Colunas esperadas: <strong>MÊS</strong>, <strong>MATRÍCULA</strong>, <strong>% IPEO</strong>,
-              <strong>% DI</strong>, <strong>% ROE</strong>, <strong>% RNT</strong>, <strong>% IOC</strong>,
-              <strong>% ISF</strong> e <strong>% ROV</strong>.
-            </div>
+            Colunas esperadas: <strong>MÊS</strong>, <strong>MATRÍCULA</strong>,
+            <strong>% IPEO</strong>, <strong>% DI</strong>, <strong>% ROE</strong>,
+            <strong>% RNT</strong>, <strong>% IOC</strong>, <strong>% ISF</strong>,
+            <strong>% ROV</strong>, <strong>% Produtividade</strong>,
+            <strong>% Eficiência</strong>, <strong>% Utilização</strong> e <strong>TMS</strong>.
+          </div>
 
             <div id="importacaoMsg"></div>
           </div>
@@ -855,9 +857,9 @@
       IOC: 4.42,
       ROV: 11.42,
       ISF: 3.83,
-      PRODUTIVIDADE: 86,75,
+      PRODUTIVIDADE: 86.75,
       "EFICIÊNCIA": 100,
-      "UTILIZAÇÃO": 86,75,
+      "UTILIZAÇÃO": 86.75,
       TMS: 19
     };
 
@@ -1033,7 +1035,7 @@
       const tbody = document.getElementById("tbodyResultados");
 
       cards.classList.add("loading");
-      tbody.innerHTML = `<tr><td colspan="10" class="empty">Carregando...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="14" class="empty">Carregando...</td></tr>`;
 
       try{
         const params = new URLSearchParams();
@@ -1060,7 +1062,7 @@
       } catch(err){
         ultimoResultadoDetalhado = [];
         renderCards([]);
-        tbody.innerHTML = `<tr><td colspan="10" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="14" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
       } finally{
         cards.classList.remove("loading");
       }
@@ -1151,7 +1153,7 @@ const maiorMelhor = indicadoresMaiorMelhor.has(nome);
       const el = document.getElementById("tbodyResultados");
 
       if (!lista.length){
-        el.innerHTML = `<tr><td colspan="10" class="empty">Nenhum resultado encontrado.</td></tr>`;
+        el.innerHTML = `<tr><td colspan="14" class="empty">Nenhum resultado encontrado.</td></tr>`;
         return;
       }
 
