@@ -783,6 +783,10 @@
                   <th>% IOC</th>
                   <th>% ISF</th>
                   <th>% ROV</th>
+                  <th>% Produtividade</th>
+                  <th>% Eficiência</th>
+                  <th>% Utilização</th>
+                  <th>TMS</th>
                 </tr>
               </thead>
               <tbody id="tbodyResultados">
@@ -850,7 +854,11 @@
       RNT: 5.87,
       IOC: 4.42,
       ROV: 11.42,
-      ISF: 3.83
+      ISF: 3.83,
+      PRODUTIVIDADE: 86,75,
+      "EFICIÊNCIA": 100,
+      "UTILIZAÇÃO": 86,75,
+      TMS: 19
     };
 
     function normalizarPercentual(v){
@@ -1080,7 +1088,14 @@
         const real = normalizarPercentual(item.real || 0);
         const meta = Number(METAS[nome] || 0);
 
-        const maiorMelhor = nome === "IPEO";
+        const indicadoresMaiorMelhor = new Set([
+  "IPEO",
+  "PRODUTIVIDADE",
+  "EFICIÊNCIA",
+  "UTILIZAÇÃO"
+]);
+
+const maiorMelhor = indicadoresMaiorMelhor.has(nome);
         const atingiu = maiorMelhor ? real >= meta : real <= meta;
 
         let pctBarra = 0;
@@ -1093,14 +1108,18 @@
         }
 
         const icones = {
-          IPEO: "bi-speedometer2",
-          DI: "bi-graph-up-arrow",
-          ROE: "bi-bullseye",
-          RNT: "bi-bar-chart-line",
-          IOC: "bi-award",
-          ISF: "bi-lightning-charge",
-          ROV: "bi-stars"
-        };
+  IPEO: "bi-speedometer2",
+  DI: "bi-graph-up-arrow",
+  ROE: "bi-bullseye",
+  RNT: "bi-bar-chart-line",
+  IOC: "bi-award",
+  ISF: "bi-lightning-charge",
+  ROV: "bi-stars",
+  PRODUTIVIDADE: "bi-bar-chart-steps",
+  "EFICIÊNCIA": "bi-activity",
+  "UTILIZAÇÃO": "bi-pie-chart",
+  TMS: "bi-clock-history"
+};
 
         const icon = icones[nome] || "bi-bar-chart";
         const cardClass = atingiu ? "success" : "danger";
@@ -1148,6 +1167,10 @@
           <td>${formatPercent(normalizarPercentual(item.ioc))}</td>
           <td>${formatPercent(normalizarPercentual(item.isf))}</td>
           <td>${formatPercent(normalizarPercentual(item.rov))}</td>
+          <td>${formatPercent(normalizarPercentual(item.produtividade))}</td>
+          <td>${formatPercent(normalizarPercentual(item.eficiencia))}</td>
+          <td>${formatPercent(normalizarPercentual(item.utilizacao))}</td>
+          <td>${formatPercent(normalizarPercentual(item.tms))}</td>
         </tr>
       `).join("");
     }
