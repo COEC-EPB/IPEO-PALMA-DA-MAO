@@ -8,6 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
   <style>
     :root{
@@ -1114,7 +1115,20 @@
           fill: false,
           borderWidth: 3,
           pointRadius: 4,
-          spanGaps: true
+          pointHoverRadius: 5,
+          spanGaps: true,
+          datalabels: {
+            display: true,
+            align: "top",
+            anchor: "end",
+            offset: 4,
+            clamp: true,
+            formatter: (value) => value == null ? "" : `${value.toFixed(1).replace(".", ",")}%`,
+            font: {
+              size: 10,
+              weight: "600"
+            }
+          }
         },
         {
           label: "Meta",
@@ -1123,7 +1137,10 @@
           fill: false,
           borderDash: [6, 6],
           borderWidth: 2,
-          pointRadius: 0
+          pointRadius: 0,
+          datalabels: {
+            display: false
+          }
         }
       ]
     },
@@ -1137,6 +1154,9 @@
       plugins: {
         legend: {
           display: true
+        },
+        datalabels: {
+          color: "#374151"
         },
         tooltip: {
           callbacks: {
@@ -1156,7 +1176,8 @@
           }
         }
       }
-    }
+    },
+    plugins: [ChartDataLabels]
   });
 
   modal.classList.add("show");
