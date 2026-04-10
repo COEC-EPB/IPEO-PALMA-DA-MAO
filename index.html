@@ -695,368 +695,333 @@
   </section>
 
   <script>
-    const API_BASE = "https://ipeo-palma-da-mao.pedro-fillype.workers.dev/api";
-    let usuarioLogado = null;
+  const API_BASE = "https://ipeo-palma-da-mao.pedro-fillype.workers.dev/api";
+  let usuarioLogado = null;
 
-    function setLoginMsg(texto, tipo = "error"){
-      const el = document.getElementById("loginMsg");
-      el.className = "msg " + tipo;
-      el.textContent = texto;
+  function setLoginMsg(texto, tipo = "error"){
+    const el = document.getElementById("loginMsg");
+    el.className = "msg " + tipo;
+    el.textContent = texto;
+  }
+
+  function limparLoginMsg(){
+    const el = document.getElementById("loginMsg");
+    el.className = "msg";
+    el.textContent = "";
+  }
+
+  function getToken(){
+    return localStorage.getItem("ipeo_token") || "";
+  }
+
+  function setToken(token){
+    localStorage.setItem("ipeo_token", token);
+  }
+
+  function clearToken(){
+    localStorage.removeItem("ipeo_token");
+  }
+
+  function authHeaders(){
+    return {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + getToken()
+    };
+  }
+
+  function setImportMsg(texto, tipo = "success"){
+    const el = document.getElementById("importacaoMsg");
+    el.innerHTML = `<div class="msg ${tipo}" style="display:block;">${texto}</div>`;
+  }
+
+  function showPage(page, btn = null){
+    document.getElementById("dashboardPage").classList.toggle("hidden", page !== "dashboard");
+    document.getElementById("resultadosPage").classList.toggle("hidden", page !== "resultados");
+    document.getElementById("importacaoPage").classList.toggle("hidden", page !== "importacao");
+
+    document.getElementById("pageTitle").textContent =
+      page === "dashboard" ? "Dashboard" :
+      page === "resultados" ? "Resultados" :
+      "Importação";
+
+    document.getElementById("pageSubtitle").textContent =
+      page === "dashboard"
+        ? "Acompanhe seus indicadores de forma rápida."
+        : page === "resultados"
+        ? "Detalhamento dos indicadores por mês."
+        : "Importe o Excel com os indicadores.";
+
+    document.querySelectorAll(".menu button").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+  }
+
+  function limparFiltros(){
+    const fMat = document.getElementById("filtroMatricula");
+    const fMes = document.getElementById("filtroMes");
+    if (fMat) fMat.value = "";
+    if (fMes) fMes.value = "";
+    carregarDados();
+  }
+
+  async function login(){
+    limparLoginMsg();
+
+    const matricula = document.getElementById("matricula").value.trim();
+    const senha = document.getElementById("senha").value.trim();
+
+    if (!matricula || !senha){
+      setLoginMsg("Informe matrícula e senha.");
+      return;
     }
 
-    function limparLoginMsg(){
-      const el = document.getElementById("loginMsg");
-      el.className = "msg";
-      el.textContent = "";
-    }
+    try{
+      const res = await fetch(API_BASE + "/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usuario: matricula,
+          senha: senha
+        })
+      });
 
-    function getToken(){
-      return localStorage.getItem("ipeo_token") || "";
-    }
+      const data = await res.json();
 
-    function setToken(token){
-      localStorage.setItem("ipeo_token", token);
-    }
-
-    function clearToken(){
-      localStorage.removeItem("ipeo_token");
-    }
-
-    function authHeaders(){
-      return {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + getToken()
-      };
-    }
-
-    function setImportMsg(texto, tipo = "success"){
-      const el = document.getElementById("importacaoMsg");
-      el.innerHTML = `<div class="msg ${tipo}" style="display:block;">${texto}</div>`;
-    }
-
-    function showPage(page, btn = null){
-      document.getElementById("dashboardPage").classList.toggle("hidden", page !== "dashboard");
-      document.getElementById("resultadosPage").classList.toggle("hidden", page !== "resultados");
-      document.getElementById("importacaoPage").classList.toggle("hidden", page !== "importacao");
-
-      document.getElementById("pageTitle").textContent =
-        page === "dashboard" ? "Dashboard" :
-        page === "resultados" ? "Resultados" :
-        "Importação";
-
-      document.getElementById("pageSubtitle").textContent =
-        page === "dashboard"
-          ? "Acompanhe seus indicadores de forma rápida."
-          : page === "resultados"
-          ? "Detalhamento dos indicadores por mês."
-          : "Importe o Excel com os indicadores.";
-
-      document.querySelectorAll(".menu button").forEach(b => b.classList.remove("active"));
-      if (btn) btn.classList.add("active");
-    }
-
-    function limparFiltros(){
-      const fMat = document.getElementById("filtroMatricula");
-      const fMes = document.getElementById("filtroMes");
-      if (fMat) fMat.value = "";
-      if (fMes) fMes.value = "";
-      carregarDados();
-    }
-
-    async function login(){
-      limparLoginMsg();
-
-      const matricula = document.getElementById("matricula").value.trim();
-      const senha = document.getElementById("senha").value.trim();
-
-      if (!matricula || !senha){
-        setLoginMsg("Informe matrícula e senha.");
-        return;
+      if (!res.ok || (!data.ok && !data.sucesso)) {
+        throw new Error(data.error || data.erro || "Falha no login");
       }
 
-      try{
-        const res = await fetch(API_BASE + "/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            usuario: matricula,
-            senha: senha
-          })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || (!data.ok && !data.sucesso)) {
-          throw new Error(data.error || data.erro || "Falha no login");
-        }
-
-        setToken(data.token);
-        await validarSessao();
-      } catch (err) {
-        setLoginMsg(err.message || "Não foi possível entrar.");
-      }
+      setToken(data.token);
+      await validarSessao();
+    } catch (err) {
+      setLoginMsg(err.message || "Não foi possível entrar.");
     }
+  }
 
-    async function validarSessao(){
-      try{
-        const res = await fetch(API_BASE + "/me", {
-          headers: authHeaders()
-        });
+  async function validarSessao(){
+    try{
+      const res = await fetch(API_BASE + "/me", {
+        headers: authHeaders()
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (!res.ok || !data.ok) {
-          throw new Error(data.error || "Sessão inválida");
-        }
-
-        usuarioLogado = data.usuario;
-
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("appScreen").classList.remove("hidden");
-
-        document.getElementById("sidebarUserName").textContent = usuarioLogado.nome || "Usuário";
-        document.getElementById("sidebarUserInfo").textContent =
-          `${usuarioLogado.matricula} • ${usuarioLogado.isAdmin ? "Administrador" : "Colaborador"}`;
-
-        document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
-        document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
-
-        await carregarDados();
-      } catch (err) {
-        clearToken();
-        usuarioLogado = null;
-        document.getElementById("loginScreen").classList.remove("hidden");
-        document.getElementById("appScreen").classList.add("hidden");
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Sessão inválida");
       }
-    }
 
-    function logout(){
+      usuarioLogado = data.usuario;
+
+      document.getElementById("loginScreen").classList.add("hidden");
+      document.getElementById("appScreen").classList.remove("hidden");
+
+      document.getElementById("sidebarUserName").textContent = usuarioLogado.nome || "Usuário";
+      document.getElementById("sidebarUserInfo").textContent =
+        `${usuarioLogado.matricula} • ${usuarioLogado.isAdmin ? "Administrador" : "Colaborador"}`;
+
+      document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
+      document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
+
+      await carregarDados();
+    } catch (err) {
       clearToken();
       usuarioLogado = null;
       document.getElementById("loginScreen").classList.remove("hidden");
       document.getElementById("appScreen").classList.add("hidden");
-      document.getElementById("senha").value = "";
-      limparLoginMsg();
     }
-
-    async function carregarDados(){
-      if (!usuarioLogado) return;
-
-      const cards = document.getElementById("cards");
-      const tbody = document.getElementById("tbodyResultados");
-
-      cards.classList.add("loading");
-      tbody.innerHTML = `<tr><td colspan="10" class="empty">Carregando...</td></tr>`;
-
-      try{
-        const params = new URLSearchParams();
-
-        if (usuarioLogado.isAdmin){
-          const matricula = document.getElementById("filtroMatricula").value.trim();
-          const mes = document.getElementById("filtroMes").value.trim();
-
-          if (matricula) params.set("matricula", matricula);
-          if (mes) params.set("mes", mes);
-        }
-
-        const url = API_BASE + "/ipeo-dashboard" + (params.toString() ? `?${params.toString()}` : "");
-        const res = await fetch(url, { headers: authHeaders() });
-        const data = await res.json();
-
-        if (!res.ok || !data.ok){
-          throw new Error(data.error || "Erro ao carregar indicadores");
-        }
-
-        renderCards(data.kpis || []);
-        renderTabela(data.resultados || []);
-      } catch(err){
-        renderCards([]);
-        tbody.innerHTML = `<tr><td colspan="10" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
-      } finally{
-        cards.classList.remove("loading");
-      }
-    }
-
-    function formatPercent(v){
-  const n = Number(v || 0);
-  return `${n.toFixed(2).replace(".", ",")}%`;
-}
-
-   const METAS = {
-  IPEO: 91.50,
-  DI: 8.67,
-  ROE: 4.18,
-  RNT: 5.87,
-  IOC: 4.42,
-  ROV: 11.42,
-  ISF: 3.83
-};
-
-function renderCards(lista){
-  const el = document.getElementById("cards");
-
-  if (!lista.length){
-    el.innerHTML = `
-      <div class="panel" style="grid-column:1/-1;">
-        <div class="empty">Nenhum indicador encontrado.</div>
-      </div>
-    `;
-    return;
   }
 
-  el.innerHTML = lista.map((item, idx) => {
-    const nome = String(item.nome || "").toUpperCase().trim();
-    const real = Number(item.real || 0);
-    const meta = Number(METAS[nome] || 0);
+  function logout(){
+    clearToken();
+    usuarioLogado = null;
+    document.getElementById("loginScreen").classList.remove("hidden");
+    document.getElementById("appScreen").classList.add("hidden");
+    document.getElementById("senha").value = "";
+    limparLoginMsg();
+  }
 
-    const atingiu = real >= meta;
-    const pctBarra = meta > 0 ? Math.min((real / meta) * 100, 100) : 0;
+  async function carregarDados(){
+    if (!usuarioLogado) return;
 
-    const icones = {
-      IPEO: "bi-speedometer2",
-      DI: "bi-graph-up-arrow",
-      ROE: "bi-bullseye",
-      RNT: "bi-bar-chart-line",
-      IOC: "bi-award",
-      ISF: "bi-lightning-charge",
-      ROV: "bi-stars"
-    };
+    const cards = document.getElementById("cards");
+    const tbody = document.getElementById("tbodyResultados");
 
-    const icon = icones[nome] || "bi-bar-chart";
-    const cardClass = atingiu ? "success" : "danger";
-    const statusClass = atingiu ? "meta-ok" : "meta-bad";
+    cards.classList.add("loading");
+    tbody.innerHTML = `<tr><td colspan="10" class="empty">Carregando...</td></tr>`;
 
-    return `
-      <div class="card ${cardClass}">
-        <div class="card-top">
-          <div class="card-title">${nome}</div>
-          <div class="card-icon"><i class="bi ${icon}"></i></div>
+    try{
+      const params = new URLSearchParams();
+
+      if (usuarioLogado.isAdmin){
+        const matricula = document.getElementById("filtroMatricula").value.trim();
+        const mes = document.getElementById("filtroMes").value.trim();
+
+        if (matricula) params.set("matricula", matricula);
+        if (mes) params.set("mes", mes);
+      }
+
+      const url = API_BASE + "/ipeo-dashboard" + (params.toString() ? `?${params.toString()}` : "");
+      const res = await fetch(url, { headers: authHeaders() });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok){
+        throw new Error(data.error || "Erro ao carregar indicadores");
+      }
+
+      renderCards(data.kpis || []);
+      renderTabela(data.resultados || []);
+    } catch(err){
+      renderCards([]);
+      tbody.innerHTML = `<tr><td colspan="10" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
+    } finally{
+      cards.classList.remove("loading");
+    }
+  }
+
+  function formatPercent(v){
+    const n = Number(v || 0);
+    return `${n.toFixed(2).replace(".", ",")}%`;
+  }
+
+  const METAS = {
+    IPEO: 91.50,
+    DI: 8.67,
+    ROE: 4.18,
+    RNT: 5.87,
+    IOC: 4.42,
+    ROV: 11.42,
+    ISF: 3.83
+  };
+
+  function renderCards(lista){
+    const el = document.getElementById("cards");
+
+    if (!lista.length){
+      el.innerHTML = `
+        <div class="panel" style="grid-column:1/-1;">
+          <div class="empty">Nenhum indicador encontrado.</div>
         </div>
+      `;
+      return;
+    }
 
-        <div class="card-value">${formatPercent(real)}</div>
+    el.innerHTML = lista.map((item) => {
+      const nome = String(item.nome || "").toUpperCase().trim();
+      const real = Number(item.real || 0);
+      const meta = Number(METAS[nome] || 0);
 
-        <div class="meta-row">
-          <span>Meta</span>
-          <span class="${statusClass}">${formatPercent(meta)}</span>
-        </div>
+      const atingiu = real >= meta;
+      const pctBarra = meta > 0 ? Math.min((real / meta) * 100, 100) : 0;
 
-        <div class="progress">
-          <div style="width:${pctBarra}%"></div>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
+      const icones = {
+        IPEO: "bi-speedometer2",
+        DI: "bi-graph-up-arrow",
+        ROE: "bi-bullseye",
+        RNT: "bi-bar-chart-line",
+        IOC: "bi-award",
+        ISF: "bi-lightning-charge",
+        ROV: "bi-stars"
+      };
 
-      el.innerHTML = lista.map((item, idx) => {
-        const pct = Number(item.meta || 0) > 0 ? (Number(item.real || 0) / Number(item.meta || 0)) * 100 : 0;
-        const icones = [
-          "bi-speedometer2",
-          "bi-graph-up-arrow",
-          "bi-bullseye",
-          "bi-bar-chart-line",
-          "bi-award",
-          "bi-lightning-charge",
-          "bi-stars"
-        ];
-        const icon = icones[idx % icones.length];
+      const icon = icones[nome] || "bi-bar-chart";
+      const cardClass = atingiu ? "success" : "danger";
+      const statusClass = atingiu ? "meta-ok" : "meta-bad";
 
-        return `
-          <div class="card">
-            <div class="card-top">
-              <div class="card-title">${item.nome}</div>
-              <div class="card-icon"><i class="bi ${icon}"></i></div>
-            </div>
-
-            <div class="card-value">${formatPercent(item.real)}</div>
-
-            <div class="meta-row">
-              <span>Média</span>
-              <span>${pct.toFixed(0)}%</span>
-            </div>
-
-            <div class="progress">
-              <div style="width:${Math.max(0, Math.min(pct, 100))}%"></div>
-            </div>
+      return `
+        <div class="card ${cardClass}">
+          <div class="card-top">
+            <div class="card-title">${nome}</div>
+            <div class="card-icon"><i class="bi ${icon}"></i></div>
           </div>
-        `;
-      }).join("");
+
+          <div class="card-value">${formatPercent(real)}</div>
+
+          <div class="meta-row">
+            <span>Meta</span>
+            <span class="${statusClass}">${formatPercent(meta)}</span>
+          </div>
+
+          <div class="progress">
+            <div style="width:${pctBarra}%"></div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderTabela(lista){
+    const el = document.getElementById("tbodyResultados");
+
+    if (!lista.length){
+      el.innerHTML = `<tr><td colspan="10" class="empty">Nenhum resultado encontrado.</td></tr>`;
+      return;
     }
 
-    function renderTabela(lista){
-      const el = document.getElementById("tbodyResultados");
+    el.innerHTML = lista.map(item => `
+      <tr>
+        <td>${item.matricula || "-"}</td>
+        <td>${item.nome || "-"}</td>
+        <td>${item.mes || "-"}</td>
+        <td>${formatPercent(item.ipeo)}</td>
+        <td>${formatPercent(item.di)}</td>
+        <td>${formatPercent(item.roe)}</td>
+        <td>${formatPercent(item.rnt)}</td>
+        <td>${formatPercent(item.ioc)}</td>
+        <td>${formatPercent(item.isf)}</td>
+        <td>${formatPercent(item.rov)}</td>
+      </tr>
+    `).join("");
+  }
 
-      if (!lista.length){
-        el.innerHTML = `<tr><td colspan="10" class="empty">Nenhum resultado encontrado.</td></tr>`;
+  async function importarExcelIPEO() {
+    const input = document.getElementById("arquivoExcel");
+    const file = input.files[0];
+
+    if (!file) {
+      setImportMsg("Selecione um arquivo Excel.", "error");
+      return;
+    }
+
+    try {
+      setImportMsg("Lendo arquivo...", "success");
+
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+
+      let rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      rows = rows.filter(r =>
+        String(r["MATRÍCULA"] || r["MATRICULA"] || "").trim() &&
+        String(r["MÊS"] || r["MES"] || "").trim()
+      );
+
+      if (!rows.length) {
+        setImportMsg("Nenhuma linha válida encontrada.", "error");
         return;
       }
 
-      el.innerHTML = lista.map(item => `
-        <tr>
-          <td>${item.matricula || "-"}</td>
-          <td>${item.nome || "-"}</td>
-          <td>${item.mes || "-"}</td>
-          <td>${formatPercent(item.ipeo)}</td>
-          <td>${formatPercent(item.di)}</td>
-          <td>${formatPercent(item.roe)}</td>
-          <td>${formatPercent(item.rnt)}</td>
-          <td>${formatPercent(item.ioc)}</td>
-          <td>${formatPercent(item.isf)}</td>
-          <td>${formatPercent(item.rov)}</td>
-        </tr>
-      `).join("");
-    }
+      const res = await fetch(API_BASE + "/importar-ipeo", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(rows)
+      });
 
-    async function importarExcelIPEO() {
-      const input = document.getElementById("arquivoExcel");
-      const file = input.files[0];
+      const data = await res.json();
 
-      if (!file) {
-        setImportMsg("Selecione um arquivo Excel.", "error");
-        return;
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Erro ao importar");
       }
 
-      try {
-        setImportMsg("Lendo arquivo...", "success");
+      setImportMsg(`Importação concluída. Processados: ${data.processados}`, "success");
+      await carregarDados();
 
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-
-        let rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-        rows = rows.filter(r =>
-          String(r["MATRÍCULA"] || r["MATRICULA"] || "").trim() &&
-          String(r["MÊS"] || r["MES"] || "").trim()
-        );
-
-        if (!rows.length) {
-          setImportMsg("Nenhuma linha válida encontrada.", "error");
-          return;
-        }
-
-        const res = await fetch(API_BASE + "/importar-ipeo", {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify(rows)
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.ok) {
-          throw new Error(data.error || "Erro ao importar");
-        }
-
-        setImportMsg(`Importação concluída. Processados: ${data.processados}`, "success");
-        await carregarDados();
-
-      } catch (err) {
-        setImportMsg(err.message || "Erro ao importar arquivo.", "error");
-      }
+    } catch (err) {
+      setImportMsg(err.message || "Erro ao importar arquivo.", "error");
     }
+  }
 
-    validarSessao();
-  </script>
+  validarSessao();
+</script>
 </body>
 </html>
