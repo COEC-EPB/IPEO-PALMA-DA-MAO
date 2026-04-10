@@ -1071,6 +1071,10 @@
       const n = Number(v || 0);
       return `${n.toFixed(2).replace(".", ",")}%`;
     }
+    function formatNumero(v){
+  const n = Number(v || 0);
+  return n.toFixed(2).replace(".", ",");
+}
 
     function renderCards(lista){
       const el = document.getElementById("cards");
@@ -1133,11 +1137,11 @@ const maiorMelhor = indicadoresMaiorMelhor.has(nome);
               <div class="card-icon"><i class="bi ${icon}"></i></div>
             </div>
 
-            <div class="card-value">${formatPercent(real)}</div>
+            <div class="card-value">${nome === "TMS" ? formatNumero(real) : formatPercent(real)}</div>
 
             <div class="meta-row">
               <span>Meta</span>
-              <span class="${statusClass}">${formatPercent(meta)}</span>
+              <div class="card-value">${nome === "TMS" ? formatNumero(real) : formatPercent(real)}</div>
             </div>
 
             <div class="progress">
@@ -1171,7 +1175,7 @@ const maiorMelhor = indicadoresMaiorMelhor.has(nome);
           <td>${formatPercent(normalizarPercentual(item.produtividade))}</td>
           <td>${formatPercent(normalizarPercentual(item.eficiencia))}</td>
           <td>${formatPercent(normalizarPercentual(item.utilizacao))}</td>
-          <td>${(item.tms)}</td>
+         <td>${formatNumero(item.tms)}</td>
         </tr>
       `).join("");
     }
