@@ -972,60 +972,69 @@
     }
 
     function renderCards(lista){
-      const el = document.getElementById("cards");
+  const el = document.getElementById("cards");
 
-      if (!lista.length){
-        el.innerHTML = `
-          <div class="panel" style="grid-column:1/-1;">
-            <div class="empty">Nenhum indicador encontrado.</div>
-          </div>
-        `;
-        return;
+  if (!lista.length){
+    el.innerHTML = `
+      <div class="panel" style="grid-column:1/-1;">
+        <div class="empty">Nenhum indicador encontrado.</div>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = lista.map((item) => {
+    const nome = String(item.nome || "").toUpperCase().trim();
+    const real = normalizarPercentual(item.real || 0);
+    const meta = Number(METAS[nome] || 0);
+
+    const maiorMelhor = nome === "IPEO";
+    const atingiu = maiorMelhor ? real >= meta : real <= meta;
+
+    let pctBarra = 0;
+    if (meta > 0) {
+      if (maiorMelhor) {
+        pctBarra = Math.min((real / meta) * 100, 100);
+      } else {
+        pctBarra = Math.min((meta / Math.max(real, 0.0001)) * 100, 100);
       }
-
-      el.innerHTML = lista.map((item) => {
-        const nome = String(item.nome || "").toUpperCase().trim();
-        const real = normalizarPercentual(item.real || 0);
-        const meta = Number(METAS[nome] || 0);
-
-        const atingiu = real >= meta;
-        const pctBarra = meta > 0 ? Math.min((real / meta) * 100, 100) : 0;
-
-        const icones = {
-          IPEO: "bi-speedometer2",
-          DI: "bi-graph-up-arrow",
-          ROE: "bi-bullseye",
-          RNT: "bi-bar-chart-line",
-          IOC: "bi-award",
-          ISF: "bi-lightning-charge",
-          ROV: "bi-stars"
-        };
-
-        const icon = icones[nome] || "bi-bar-chart";
-        const cardClass = atingiu ? "success" : "danger";
-        const statusClass = atingiu ? "meta-ok" : "meta-bad";
-
-        return `
-          <div class="card ${cardClass}" onclick="abrirGraficoIndicador('${nome}')">
-            <div class="card-top">
-              <div class="card-title">${nome}</div>
-              <div class="card-icon"><i class="bi ${icon}"></i></div>
-            </div>
-
-            <div class="card-value">${formatPercent(real)}</div>
-
-            <div class="meta-row">
-              <span>Meta</span>
-              <span class="${statusClass}">${formatPercent(meta)}</span>
-            </div>
-
-            <div class="progress">
-              <div style="width:${pctBarra}%"></div>
-            </div>
-          </div>
-        `;
-      }).join("");
     }
+
+    const icones = {
+      IPEO: "bi-speedometer2",
+      DI: "bi-graph-up-arrow",
+      ROE: "bi-bullseye",
+      RNT: "bi-bar-chart-line",
+      IOC: "bi-award",
+      ISF: "bi-lightning-charge",
+      ROV: "bi-stars"
+    };
+
+    const icon = icones[nome] || "bi-bar-chart";
+    const cardClass = atingiu ? "success" : "danger";
+    const statusClass = atingiu ? "meta-ok" : "meta-bad";
+
+    return `
+      <div class="card ${cardClass}" onclick="abrirGraficoIndicador('${nome}')">
+        <div class="card-top">
+          <div class="card-title">${nome}</div>
+          <div class="card-icon"><i class="bi ${icon}"></i></div>
+        </div>
+
+        <div class="card-value">${formatPercent(real)}</div>
+
+        <div class="meta-row">
+          <span>Meta</span>
+          <span class="${statusClass}">${formatPercent(meta)}</span>
+        </div>
+
+        <div class="progress">
+          <div style="width:${Math.max(0, pctBarra)}%"></div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
 
     function renderTabela(lista){
       const el = document.getElementById("tbodyResultados");
@@ -1116,6 +1125,9 @@
           borderWidth: 3,
           pointRadius: 4,
           pointHoverRadius: 5,
+          spanGaps: true,
+          borderColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
+          backgroundColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
           spanGaps: true,
           datalabels: {
             display: true,
