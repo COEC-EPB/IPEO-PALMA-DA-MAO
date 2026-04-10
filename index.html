@@ -1184,7 +1184,21 @@ const maiorMelhor = indicadoresMaiorMelhor.has(nome);
       const modal = document.getElementById("chartModal");
       const title = document.getElementById("chartTitle");
 
-      const chave = indicador.toLowerCase();
+      const mapaIndicadores = {
+  "IPEO": "ipeo",
+  "DI": "di",
+  "ROE": "roe",
+  "RNT": "rnt",
+  "IOC": "ioc",
+  "ISF": "isf",
+  "ROV": "rov",
+  "PRODUTIVIDADE": "produtividade",
+  "EFICIÊNCIA": "eficiencia",
+  "UTILIZAÇÃO": "utilizacao",
+  "TMS": "tms"
+};
+
+const chave = mapaIndicadores[indicador] || indicador.toLowerCase();
       const mesesFixos = ["01","02","03","04","05","06","07","08","09","10","11","12"];
       const mesesLabel = {
         "01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
