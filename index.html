@@ -786,7 +786,7 @@
                   <th>% Produtividade</th>
                   <th>% Eficiência</th>
                   <th>% Utilização</th>
-                  <th>TMS</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="tbodyResultados">
@@ -819,7 +819,7 @@
             <strong>% IPEO</strong>, <strong>% DI</strong>, <strong>% ROE</strong>,
             <strong>% RNT</strong>, <strong>% IOC</strong>, <strong>% ISF</strong>,
             <strong>% ROV</strong>, <strong>% Produtividade</strong>,
-            <strong>% Eficiência</strong>, <strong>% Utilização</strong> e <strong>TMS</strong>.
+            <strong>% Eficiência</strong>, <strong>% Utilização</strong> e <strong></strong>.
           </div>
 
             <div id="importacaoMsg"></div>
@@ -1172,7 +1172,7 @@ const maiorMelhor = indicadoresMaiorMelhor.has(nome);
           <td>${formatPercent(normalizarPercentual(item.produtividade))}</td>
           <td>${formatPercent(normalizarPercentual(item.eficiencia))}</td>
           <td>${formatPercent(normalizarPercentual(item.utilizacao))}</td>
-          <td>${formatPercent(normalizarPercentual(item.tms))}</td>
+          <td>${(item.tms)}</td>
         </tr>
       `).join("");
     }
