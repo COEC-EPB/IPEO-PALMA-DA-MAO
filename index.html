@@ -984,7 +984,7 @@
 
       el.innerHTML = lista.map((item) => {
         const nome = String(item.nome || "").toUpperCase().trim();
-        const real = Number(item.real || 0);
+        const real = normalizarPercentual(item.real || 0);
         const meta = Number(METAS[nome] || 0);
 
         const atingiu = real >= meta;
@@ -1039,113 +1039,128 @@
           <td>${item.matricula || "-"}</td>
           <td>${item.nome || "-"}</td>
           <td>${item.mes || "-"}</td>
-          <td>${formatPercent(item.ipeo)}</td>
-          <td>${formatPercent(item.di)}</td>
-          <td>${formatPercent(item.roe)}</td>
-          <td>${formatPercent(item.rnt)}</td>
-          <td>${formatPercent(item.ioc)}</td>
-          <td>${formatPercent(item.isf)}</td>
-          <td>${formatPercent(item.rov)}</td>
+          <td>${formatPercent(normalizarPercentual(item.ipeo))}</td>
+          <td>${formatPercent(normalizarPercentual(item.di))}</td>
+          <td>${formatPercent(normalizarPercentual(item.roe))}</td>
+          <td>${formatPercent(normalizarPercentual(item.rnt))}</td>
+          <td>${formatPercent(normalizarPercentual(item.ioc))}</td>
+          <td>${formatPercent(normalizarPercentual(item.isf))}</td>
+          <td>${formatPercent(normalizarPercentual(item.rov))}</td>
         </tr>
       `).join("");
     }
 
+    function normalizarPercentual(v){
+  let n = Number(v || 0);
+  if (!Number.isFinite(n)) return 0;
+
+  // se veio como fração, converte para percentual
+  if (n > 0 && n < 1) {
+    n = n * 100;
+  }
+
+  return n;
+}
+
     function abrirGraficoIndicador(indicador){
-      const modal = document.getElementById("chartModal");
-      const title = document.getElementById("chartTitle");
+  const modal = document.getElementById("chartModal");
+  const title = document.getElementById("chartTitle");
 
-      const chave = indicador.toLowerCase();
-      const mesesFixos = ["01","02","03","04","05","06","07","08","09","10","11","12"];
-      const mesesLabel = {
-        "01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
-        "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"
-      };
+  const chave = indicador.toLowerCase();
+  const mesesFixos = ["01","02","03","04","05","06","07","08","09","10","11","12"];
+  const mesesLabel = {
+    "01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
+    "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"
+  };
 
-      const grupos = {};
-      for (const mes of mesesFixos) grupos[mes] = [];
+  const grupos = {};
+  for (const mes of mesesFixos) grupos[mes] = [];
 
-      for (const row of ultimoResultadoDetalhado) {
-        const mes = String(row.mes || "").padStart(2, "0");
-        const valor = Number(row[chave] || 0);
-        if (grupos[mes]) grupos[mes].push(valor);
-      }
+  for (const row of ultimoResultadoDetalhado) {
+    const mes = String(row.mes || "").padStart(2, "0");
+    const valor = normalizarPercentual(row[chave]);
 
-      const labels = mesesFixos.map(m => mesesLabel[m]);
-      const valores = mesesFixos.map(m => {
-        const arr = grupos[m];
-        if (!arr || !arr.length) return null;
-        const media = arr.reduce((a,b) => a + b, 0) / arr.length;
-        return Number(media.toFixed(2));
-      });
+    if (grupos[mes]) {
+      grupos[mes].push(valor);
+    }
+  }
 
-      title.textContent = `Evolução do ${indicador} ao longo do ano`;
+  const labels = mesesFixos.map(m => mesesLabel[m]);
+  const valores = mesesFixos.map(m => {
+    const arr = grupos[m];
+    if (!arr || !arr.length) return null;
+    const media = arr.reduce((a,b) => a + b, 0) / arr.length;
+    return Number(media.toFixed(2));
+  });
 
-      if (indicadorChart) {
-        indicadorChart.destroy();
-        indicadorChart = null;
-      }
+  title.textContent = `Evolução do ${indicador} ao longo do ano`;
 
-      const ctx = document.getElementById("indicatorChart").getContext("2d");
+  if (indicadorChart) {
+    indicadorChart.destroy();
+    indicadorChart = null;
+  }
 
-      indicadorChart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: indicador,
-              data: valores,
-              tension: 0.3,
-              fill: false,
-              borderWidth: 3,
-              pointRadius: 4,
-              spanGaps: true
-            },
-            {
-              label: "Meta",
-              data: mesesFixos.map(() => Number(METAS[indicador] || 0)),
-              tension: 0,
-              fill: false,
-              borderDash: [6, 6],
-              borderWidth: 2,
-              pointRadius: 0
-            }
-          ]
+  const ctx = document.getElementById("indicatorChart").getContext("2d");
+
+  indicadorChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: indicador,
+          data: valores,
+          tension: 0.3,
+          fill: false,
+          borderWidth: 3,
+          pointRadius: 4,
+          spanGaps: true
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: "index",
-            intersect: false
-          },
-          plugins: {
-            legend: {
-              display: true
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context){
-                  return `${context.dataset.label}: ${Number(context.raw || 0).toFixed(2).replace(".", ",")}%`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value){
-                  return Number(value).toFixed(0).replace(".", ",") + "%";
-                }
-              }
+        {
+          label: "Meta",
+          data: mesesFixos.map(() => Number(METAS[indicador] || 0)),
+          tension: 0,
+          fill: false,
+          borderDash: [6, 6],
+          borderWidth: 2,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context){
+              return `${context.dataset.label}: ${Number(context.raw || 0).toFixed(2).replace(".", ",")}%`;
             }
           }
         }
-      });
-
-      modal.classList.add("show");
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value){
+              return Number(value).toFixed(0).replace(".", ",") + "%";
+            }
+          }
+        }
+      }
     }
+  });
+
+  modal.classList.add("show");
+}
 
     function fecharGrafico(event){
       if (event && event.target && event.target.id !== "chartModal") return;
