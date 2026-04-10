@@ -479,6 +479,41 @@
       .filters, .filters-2{ grid-template-columns:1fr; }
       .topbar{ align-items:flex-start; }
     }
+    .card.success{
+  border:1px solid rgba(19,115,51,.18);
+}
+
+.card.success .card-icon{
+  background:#ecf8ee;
+  color:#137333;
+}
+
+.card.success .progress > div{
+  background:linear-gradient(90deg,#137333,#34a853);
+}
+
+.card.danger{
+  border:1px solid rgba(179,38,30,.18);
+}
+
+.card.danger .card-icon{
+  background:#fdecec;
+  color:#b3261e;
+}
+
+.card.danger .progress > div{
+  background:linear-gradient(90deg,#b3261e,#ea4335);
+}
+
+.meta-ok{
+  color:#137333;
+  font-weight:700;
+}
+
+.meta-bad{
+  color:#b3261e;
+  font-weight:700;
+}
   </style>
 </head>
 <body>
@@ -843,21 +878,75 @@
     }
 
     function formatPercent(v){
-      const n = Number(v || 0);
-      return `${n.toFixed(2).replace(".", ",")}%`;
-    }
+  const n = Number(v || 0);
+  return `${n.toFixed(2).replace(".", ",")}%`;
+}
 
-    function renderCards(lista){
-      const el = document.getElementById("cards");
+   const METAS = {
+  IPEO: 91.50,
+  DI: 8.67,
+  ROE: 4.18,
+  RNT: 5.87,
+  IOC: 4.42,
+  ROV: 11.42,
+  ISF: 3.83
+};
 
-      if (!lista.length){
-        el.innerHTML = `
-          <div class="panel" style="grid-column:1/-1;">
-            <div class="empty">Nenhum indicador encontrado.</div>
-          </div>
-        `;
-        return;
-      }
+function renderCards(lista){
+  const el = document.getElementById("cards");
+
+  if (!lista.length){
+    el.innerHTML = `
+      <div class="panel" style="grid-column:1/-1;">
+        <div class="empty">Nenhum indicador encontrado.</div>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = lista.map((item, idx) => {
+    const nome = String(item.nome || "").toUpperCase().trim();
+    const real = Number(item.real || 0);
+    const meta = Number(METAS[nome] || 0);
+
+    const atingiu = real >= meta;
+    const pctBarra = meta > 0 ? Math.min((real / meta) * 100, 100) : 0;
+
+    const icones = {
+      IPEO: "bi-speedometer2",
+      DI: "bi-graph-up-arrow",
+      ROE: "bi-bullseye",
+      RNT: "bi-bar-chart-line",
+      IOC: "bi-award",
+      ISF: "bi-lightning-charge",
+      ROV: "bi-stars"
+    };
+
+    const icon = icones[nome] || "bi-bar-chart";
+    const cardClass = atingiu ? "success" : "danger";
+    const statusClass = atingiu ? "meta-ok" : "meta-bad";
+
+    return `
+      <div class="card ${cardClass}">
+        <div class="card-top">
+          <div class="card-title">${nome}</div>
+          <div class="card-icon"><i class="bi ${icon}"></i></div>
+        </div>
+
+        <div class="card-value">${formatPercent(real)}</div>
+
+        <div class="meta-row">
+          <span>Meta</span>
+          <span class="${statusClass}">${formatPercent(meta)}</span>
+        </div>
+
+        <div class="progress">
+          <div style="width:${pctBarra}%"></div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
 
       el.innerHTML = lista.map((item, idx) => {
         const pct = Number(item.meta || 0) > 0 ? (Number(item.real || 0) / Number(item.meta || 0)) * 100 : 0;
