@@ -760,8 +760,20 @@
       </section>
 
       <section id="dashboardPage">
-        <div class="cards" id="cards"></div>
-      </section>
+  <div class="panel">
+    <div class="panel-title">
+      <i class="bi bi-briefcase"></i> MIP
+    </div>
+    <div class="cards" id="cardsMIP"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      <i class="bi bi-bar-chart-line"></i> IPEO
+    </div>
+    <div class="cards" id="cardsIPEO"></div>
+  </div>
+</section>
 
       <section id="resultadosPage" class="hidden">
         <div class="panel">
@@ -850,18 +862,18 @@
     let indicadorChart = null;
 
     const METAS = {
-      IPEO: 91.50,
-      DI: 8.67,
-      ROE: 4.18,
-      RNT: 5.87,
-      IOC: 4.42,
-      ROV: 11.42,
-      ISF: 3.83,
-      PRODUTIVIDADE: 86.75,
-      "EFICIÊNCIA": 100,
-      "UTILIZAÇÃO": 86.75,
-      TMS: 19
-    };
+  IPEO: 91.50,
+  DI: 8.67,
+  ROE: 4.18,
+  RNT: 5.87,
+  IOC: 4.42,
+  ROV: 11.42,
+  ISF: 3.83,
+  PRODUTIVIDADE: 86.75,
+  "EFICIÊNCIA": 100,
+  "UTILIZAÇÃO": 86.75,
+  TMS: 19
+};
 
     function normalizarPercentual(v){
   let n = Number(v || 0);
@@ -1077,81 +1089,102 @@
 }
 
     function renderCards(lista){
-      const el = document.getElementById("cards");
+  const elMIP = document.getElementById("cardsMIP");
+  const elIPEO = document.getElementById("cardsIPEO");
 
-      if (!lista.length){
-        el.innerHTML = `
-          <div class="panel" style="grid-column:1/-1;">
-            <div class="empty">Nenhum indicador encontrado.</div>
-          </div>
-        `;
-        return;
+  const grupoMIP = ["PRODUTIVIDADE", "EFICIÊNCIA", "UTILIZAÇÃO", "TMS"];
+  const grupoIPEO = ["IPEO", "DI", "ROV", "ROE", "RNT", "ISF", "IOC"];
+
+  if (!lista.length){
+    const vazio = `
+      <div class="panel" style="grid-column:1/-1;">
+        <div class="empty">Nenhum indicador encontrado.</div>
+      </div>
+    `;
+    elMIP.innerHTML = vazio;
+    elIPEO.innerHTML = vazio;
+    return;
+  }
+
+  function criarCard(item){
+    const nome = String(item.nome || "").toUpperCase().trim();
+    const real = nome === "TMS"
+      ? Number(item.real || 0)
+      : normalizarPercentual(item.real || 0);
+
+    const meta = Number(METAS[nome] || 0);
+
+    const indicadoresMaiorMelhor = new Set([
+      "IPEO",
+      "PRODUTIVIDADE",
+      "EFICIÊNCIA",
+      "UTILIZAÇÃO"
+    ]);
+
+    const maiorMelhor = indicadoresMaiorMelhor.has(nome);
+    const atingiu = maiorMelhor ? real >= meta : real <= meta;
+
+    let pctBarra = 0;
+    if (meta > 0) {
+      if (maiorMelhor) {
+        pctBarra = Math.min((real / meta) * 100, 100);
+      } else {
+        pctBarra = Math.min((meta / Math.max(real, 0.0001)) * 100, 100);
       }
-
-      el.innerHTML = lista.map((item) => {
-        const nome = String(item.nome || "").toUpperCase().trim();
-        const real = normalizarPercentual(item.real || 0);
-        const meta = Number(METAS[nome] || 0);
-
-        const indicadoresMaiorMelhor = new Set([
-  "IPEO",
-  "PRODUTIVIDADE",
-  "EFICIÊNCIA",
-  "UTILIZAÇÃO"
-]);
-
-const maiorMelhor = indicadoresMaiorMelhor.has(nome);
-        const atingiu = maiorMelhor ? real >= meta : real <= meta;
-
-        let pctBarra = 0;
-        if (meta > 0) {
-          if (maiorMelhor) {
-            pctBarra = Math.min((real / meta) * 100, 100);
-          } else {
-            pctBarra = Math.min((meta / Math.max(real, 0.0001)) * 100, 100);
-          }
-        }
-
-        const icones = {
-  IPEO: "bi-speedometer2",
-  DI: "bi-graph-up-arrow",
-  ROE: "bi-bullseye",
-  RNT: "bi-bar-chart-line",
-  IOC: "bi-award",
-  ISF: "bi-lightning-charge",
-  ROV: "bi-stars",
-  PRODUTIVIDADE: "bi-bar-chart-steps",
-  "EFICIÊNCIA": "bi-activity",
-  "UTILIZAÇÃO": "bi-pie-chart",
-  TMS: "bi-clock-history"
-};
-
-        const icon = icones[nome] || "bi-bar-chart";
-        const cardClass = atingiu ? "success" : "danger";
-        const statusClass = atingiu ? "meta-ok" : "meta-bad";
-
-        return `
-          <div class="card ${cardClass}" onclick="abrirGraficoIndicador('${nome}')">
-            <div class="card-top">
-              <div class="card-title">${nome}</div>
-              <div class="card-icon"><i class="bi ${icon}"></i></div>
-            </div>
-
-            <div class="card-value">${nome === "TMS" ? formatNumero(real) : formatPercent(real)}</div>
-
-            <div class="meta-row">
-              <span>Meta</span>
-              <div class="card-value">${nome === "TMS" ? formatNumero(real) : formatPercent(real)}</div>
-            </div>
-
-            <div class="progress">
-              <div style="width:${Math.max(0, pctBarra)}%"></div>
-            </div>
-          </div>
-        `;
-      }).join("");
     }
 
+    const icones = {
+      IPEO: "bi-speedometer2",
+      DI: "bi-graph-up-arrow",
+      ROE: "bi-bullseye",
+      RNT: "bi-bar-chart-line",
+      IOC: "bi-award",
+      ISF: "bi-lightning-charge",
+      ROV: "bi-stars",
+      PRODUTIVIDADE: "bi-bar-chart-steps",
+      "EFICIÊNCIA": "bi-activity",
+      "UTILIZAÇÃO": "bi-pie-chart",
+      TMS: "bi-clock-history"
+    };
+
+    const icon = icones[nome] || "bi-bar-chart";
+    const cardClass = atingiu ? "success" : "danger";
+    const statusClass = atingiu ? "meta-ok" : "meta-bad";
+
+    const valorFormatado = nome === "TMS" ? formatNumero(real) : formatPercent(real);
+    const metaFormatada = nome === "TMS" ? formatNumero(meta) : formatPercent(meta);
+
+    return `
+      <div class="card ${cardClass}" onclick="abrirGraficoIndicador('${nome}')">
+        <div class="card-top">
+          <div class="card-title">${nome}</div>
+          <div class="card-icon"><i class="bi ${icon}"></i></div>
+        </div>
+
+        <div class="card-value">${valorFormatado}</div>
+
+        <div class="meta-row">
+          <span>Meta</span>
+          <span class="${statusClass}">${metaFormatada}</span>
+        </div>
+
+        <div class="progress">
+          <div style="width:${Math.max(0, pctBarra)}%"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  elMIP.innerHTML = lista
+    .filter(item => grupoMIP.includes(String(item.nome || "").toUpperCase().trim()))
+    .map(criarCard)
+    .join("");
+
+  elIPEO.innerHTML = lista
+    .filter(item => grupoIPEO.includes(String(item.nome || "").toUpperCase().trim()))
+    .map(criarCard)
+    .join("");
+}
     function renderTabela(lista){
       const el = document.getElementById("tbodyResultados");
 
@@ -1185,6 +1218,20 @@ const maiorMelhor = indicadoresMaiorMelhor.has(nome);
       const title = document.getElementById("chartTitle");
 
       const mapaIndicadores = {
+  "IPEO": "ipeo",
+  "DI": "di",
+  "ROE": "roe",
+  "RNT": "rnt",
+  "IOC": "ioc",
+  "ISF": "isf",
+  "ROV": "rov",
+  "PRODUTIVIDADE": "produtividade",
+  "EFICIÊNCIA": "eficiencia",
+  "UTILIZAÇÃO": "utilizacao",
+  "TMS": "tms"
+};
+
+const mapaIndicadores = {
   "IPEO": "ipeo",
   "DI": "di",
   "ROE": "roe",
@@ -1256,7 +1303,12 @@ const chave = mapaIndicadores[indicador] || indicador.toLowerCase();
                 anchor: "end",
                 offset: 4,
                 clamp: true,
-                formatter: (value) => value == null ? "" : `${value.toFixed(1).replace(".", ",")}%`,
+                label: function(context){
+  const valor = Number(context.raw || 0).toFixed(2).replace(".", ",");
+  return indicador === "TMS"
+    ? `${context.dataset.label}: ${valor}`
+    : `${context.dataset.label}: ${valor}%`;
+},
                 font: {
                   size: 10,
                   weight: "600"
@@ -1294,13 +1346,11 @@ const chave = mapaIndicadores[indicador] || indicador.toLowerCase();
               color: "#374151"
             },
             tooltip: {
-              callbacks: {
-                label: function(context){
-                  return `${context.dataset.label}: ${Number(context.raw || 0).toFixed(2).replace(".", ",")}%`;
-                }
-              }
-            }
-          },
+              callback: function(value){
+  return indicador === "TMS"
+    ? Number(value).toFixed(0).replace(".", ",")
+    : Number(value).toFixed(0).replace(".", ",") + "%";
+},
           scales: {
             y: {
               beginAtZero: true,
