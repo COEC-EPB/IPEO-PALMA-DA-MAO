@@ -1214,148 +1214,155 @@
     }
 
     function abrirGraficoIndicador(indicador){
-      const modal = document.getElementById("chartModal");
-      const title = document.getElementById("chartTitle");
+  const modal = document.getElementById("chartModal");
+  const title = document.getElementById("chartTitle");
 
-      
+  const mapaIndicadores = {
+    "IPEO": "ipeo",
+    "DI": "di",
+    "ROE": "roe",
+    "RNT": "rnt",
+    "IOC": "ioc",
+    "ISF": "isf",
+    "ROV": "rov",
+    "PRODUTIVIDADE": "produtividade",
+    "EFICIÊNCIA": "eficiencia",
+    "UTILIZAÇÃO": "utilizacao",
+    "TMS": "tms"
+  };
 
-const mapaIndicadores = {
-  "IPEO": "ipeo",
-  "DI": "di",
-  "ROE": "roe",
-  "RNT": "rnt",
-  "IOC": "ioc",
-  "ISF": "isf",
-  "ROV": "rov",
-  "PRODUTIVIDADE": "produtividade",
-  "EFICIÊNCIA": "eficiencia",
-  "UTILIZAÇÃO": "utilizacao",
-  "TMS": "tms"
-};
+  const chave = mapaIndicadores[indicador] || indicador.toLowerCase();
 
-const chave = mapaIndicadores[indicador] || indicador.toLowerCase();
-      const mesesFixos = ["01","02","03","04","05","06","07","08","09","10","11","12"];
-      const mesesLabel = {
-        "01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
-        "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"
-      };
+  const mesesFixos = ["01","02","03","04","05","06","07","08","09","10","11","12"];
+  const mesesLabel = {
+    "01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
+    "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"
+  };
 
-      const grupos = {};
-      for (const mes of mesesFixos) grupos[mes] = [];
+  const grupos = {};
+  for (const mes of mesesFixos) grupos[mes] = [];
 
-      for (const row of ultimoResultadoDetalhado) {
-        const mes = String(row.mes || "").padStart(2, "0");
-        const valor = normalizarPercentual(row[chave]);
+  for (const row of ultimoResultadoDetalhado) {
+    const mes = String(row.mes || "").padStart(2, "0");
+    const valor = indicador === "TMS"
+      ? Number(row[chave] || 0)
+      : normalizarPercentual(row[chave]);
 
-        if (grupos[mes]) {
-          grupos[mes].push(valor);
-        }
-      }
+    if (grupos[mes]) {
+      grupos[mes].push(valor);
+    }
+  }
 
-      const labels = mesesFixos.map(m => mesesLabel[m]);
-      const valores = mesesFixos.map(m => {
-        const arr = grupos[m];
-        if (!arr || !arr.length) return null;
-        const media = arr.reduce((a,b) => a + b, 0) / arr.length;
-        return Number(media.toFixed(2));
-      });
+  const labels = mesesFixos.map(m => mesesLabel[m]);
+  const valores = mesesFixos.map(m => {
+    const arr = grupos[m];
+    if (!arr || !arr.length) return null;
+    const media = arr.reduce((a,b) => a + b, 0) / arr.length;
+    return Number(media.toFixed(2));
+  });
 
-      title.textContent = `Evolução do ${indicador} ao longo do ano`;
+  title.textContent = `Evolução do ${indicador} ao longo do ano`;
 
-      if (indicadorChart) {
-        indicadorChart.destroy();
-        indicadorChart = null;
-      }
+  if (indicadorChart) {
+    indicadorChart.destroy();
+    indicadorChart = null;
+  }
 
-      const ctx = document.getElementById("indicatorChart").getContext("2d");
+  const ctx = document.getElementById("indicatorChart").getContext("2d");
 
-      indicadorChart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: indicador,
-              data: valores,
-              tension: 0.3,
-              fill: false,
-              borderWidth: 3,
-              pointRadius: 4,
-              pointHoverRadius: 5,
-              spanGaps: true,
-              borderColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
-              backgroundColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
-              datalabels: {
-                display: true,
-                align: "top",
-                anchor: "end",
-                offset: 4,
-                clamp: true,
-                label: function(context){
-  const valor = Number(context.raw || 0).toFixed(2).replace(".", ",");
-  return indicador === "TMS"
-    ? `${context.dataset.label}: ${valor}`
-    : `${context.dataset.label}: ${valor}%`;
-},
-                font: {
-                  size: 10,
-                  weight: "600"
-                }
-              }
+  indicadorChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: indicador,
+          data: valores,
+          tension: 0.3,
+          fill: false,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 5,
+          spanGaps: true,
+          borderColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
+          backgroundColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
+          datalabels: {
+            display: true,
+            align: "top",
+            anchor: "end",
+            offset: 4,
+            clamp: true,
+            formatter: (value) => {
+              if (value == null) return "";
+              return indicador === "TMS"
+                ? value.toFixed(1).replace(".", ",")
+                : `${value.toFixed(1).replace(".", ",")}%`;
             },
-            {
-              label: "Meta",
-              data: mesesFixos.map(() => Number(METAS[indicador] || 0)),
-              tension: 0,
-              fill: false,
-              borderDash: [6, 6],
-              borderWidth: 2,
-              pointRadius: 0,
-              borderColor: "#ff6384",
-              backgroundColor: "#ff6384",
-              datalabels: {
-                display: false
-              }
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: "index",
-            intersect: false
-          },
-          plugins: {
-            legend: {
-              display: true
-            },
-            datalabels: {
-              color: "#374151"
-            },
-            tooltip: {
-              callback: function(value){
-  return indicador === "TMS"
-    ? Number(value).toFixed(0).replace(".", ",")
-    : Number(value).toFixed(0).replace(".", ",") + "%";
-},
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value){
-                  return Number(value).toFixed(0).replace(".", ",") + "%";
-                }
-              }
+            font: {
+              size: 10,
+              weight: "600"
             }
           }
         },
-        plugins: [ChartDataLabels]
-      });
+        {
+          label: "Meta",
+          data: mesesFixos.map(() => Number(METAS[indicador] || 0)),
+          tension: 0,
+          fill: false,
+          borderDash: [6, 6],
+          borderWidth: 2,
+          pointRadius: 0,
+          borderColor: "#ff6384",
+          backgroundColor: "#ff6384",
+          datalabels: {
+            display: false
+          }
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true
+        },
+        datalabels: {
+          color: "#374151"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context){
+              const valor = Number(context.raw || 0).toFixed(2).replace(".", ",");
+              return indicador === "TMS"
+                ? `${context.dataset.label}: ${valor}`
+                : `${context.dataset.label}: ${valor}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value){
+              return indicador === "TMS"
+                ? Number(value).toFixed(0).replace(".", ",")
+                : Number(value).toFixed(0).replace(".", ",") + "%";
+            }
+          }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
 
-      modal.classList.add("show");
-    }
-
+  modal.classList.add("show");
+}
     function fecharGrafico(event){
       if (event && event.target && event.target.id !== "chartModal") return;
       document.getElementById("chartModal").classList.remove("show");
