@@ -637,6 +637,156 @@
         height:300px;
       }
     }
+    .help-modal-box{
+    width:min(1080px, 100%);
+    background:#fff;
+    border-radius:24px;
+    box-shadow:0 24px 70px rgba(0,0,0,.18);
+    overflow:hidden;
+    border:1px solid rgba(0,0,0,.05);
+  }
+
+  .help-header{
+    padding:20px 22px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid #e5e7eb;
+    background:linear-gradient(135deg,#f8fcff,#eef7fb);
+  }
+
+  .help-header h3{
+    margin:0;
+    font-size:20px;
+    color:#0f172a;
+  }
+
+  .help-subtitle{
+    margin-top:4px;
+    color:#64748b;
+    font-size:13px;
+  }
+
+  .help-body{
+    padding:20px;
+    max-height:75vh;
+    overflow:auto;
+    background:linear-gradient(180deg,#ffffff 0%, #f8fbfd 100%);
+  }
+
+  .help-tabs{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+
+  .help-tab{
+    border:none;
+    border-radius:999px;
+    padding:10px 16px;
+    font-weight:700;
+    cursor:pointer;
+    background:#eaf4f8;
+    color:#0f5170;
+    transition:.2s;
+  }
+
+  .help-tab.active{
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:#fff;
+    box-shadow:0 10px 20px rgba(0,151,206,.20);
+  }
+
+  .help-section{
+    display:none;
+  }
+
+  .help-section.active{
+    display:block;
+  }
+
+  .help-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
+    gap:16px;
+  }
+
+  .help-card{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:18px;
+    padding:18px;
+    box-shadow:0 10px 25px rgba(15,23,42,.06);
+  }
+
+  .help-card h4{
+    margin:0 0 10px;
+    font-size:16px;
+    color:#0f172a;
+  }
+
+  .help-card p{
+    margin:8px 0;
+    color:#334155;
+    font-size:14px;
+    line-height:1.55;
+  }
+
+  .help-badge{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+    margin-bottom:10px;
+  }
+
+  .help-badge.mip{
+    background:#e8f6fd;
+    color:#0369a1;
+  }
+
+  .help-badge.ipeo{
+    background:#fff1e8;
+    color:#c2410c;
+  }
+
+  .help-formula{
+    background:#eef6fa;
+    border:1px solid #d6eaf3;
+    border-radius:12px;
+    padding:10px 12px;
+    font-weight:700;
+    color:#0f5170;
+    display:inline-block;
+    margin-top:6px;
+  }
+
+  .help-note{
+    margin-top:18px;
+    padding:14px 16px;
+    border-radius:14px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    color:#475569;
+    font-size:13px;
+  }
+
+  .help-alert{
+    color:#b3261e;
+    font-weight:700;
+  }
+
+  @media (max-width: 700px){
+    .help-body{
+      padding:14px;
+    }
+
+    .help-grid{
+      grid-template-columns:1fr;
+    }
+  }
   </style>
 </head>
 <body>
@@ -717,9 +867,9 @@
             <i class="bi bi-arrow-clockwise"></i> Atualizar
           </button>
 
-          <button class="btn btn-soft" onclick="abrirAjuda()">
-          <i class="bi bi-info-circle"></i> Entender indicadores
-        </button>
+          <button class="btn btn-soft" onclick="abrirAjuda('mip')">
+  <i class="bi bi-info-circle"></i> Entender indicadores
+</button>
         </div>
       </div>
 
@@ -771,15 +921,21 @@
       <section id="dashboardPage">
   <div class="panel">
     <div class="panel-title">
-      <i class="bi bi-briefcase"></i> MIP
-    </div>
+  <i class="bi bi-briefcase"></i> MIP
+  <button class="btn btn-soft" style="margin-left:auto;padding:8px 12px;" onclick="abrirAjuda('mip')">
+    <i class="bi bi-question-circle"></i> Sobre
+  </button>
+</div>
     <div class="cards" id="cardsMIP"></div>
   </div>
 
   <div class="panel">
     <div class="panel-title">
-      <i class="bi bi-bar-chart-line"></i> IPEO
-    </div>
+  <i class="bi bi-bar-chart-line"></i> IPEO
+  <button class="btn btn-soft" style="margin-left:auto;padding:8px 12px;" onclick="abrirAjuda('ipeo')">
+    <i class="bi bi-question-circle"></i> Sobre
+  </button>
+</div>
     <div class="cards" id="cardsIPEO"></div>
   </div>
 </section>
@@ -872,95 +1028,125 @@
       <button class="chart-close" onclick="fecharAjuda()">×</button>
     </div>
 
-    <div class="chart-body" style="max-height:70vh; overflow:auto; font-size:14px; line-height:1.6">
-
-      <h4 style="margin-bottom:10px;">📊 MIP (Indicadores Operacionais)</h4>
-<p>
-  <b>MIP (Medição Individual de Produtividade)</b>
-</p>
-<p>
-  <b>Produtividade:</b> Representa o desempenho geral da equipe, considerando o quanto foi produzido em relação ao esperado.
-</p>
-
-<p>
-  <b>Como é calculada:</b><br>
-  <span style="background:#eef6fa; padding:6px 10px; border-radius:8px; display:inline-block; margin-top:6px;">
-    Eficiência × Utilização = <b>Produtividade</b>
-  </span>
-</p>
-
-<br>
-
-<p>
-  <b>Eficiência:</b> Avalia se as atividades foram executadas dentro do tempo padrão previsto, ou seja, o quão bem a equipe performa em relação ao tempo esperado.
-</p>
-
-<p>
-  <b>Utilização:</b> Mede o quanto do tempo disponível da equipe foi efetivamente utilizado na execução dos serviços.
-</p>
-
-<br>
-
-<p style="color:#137333; font-weight:600;">
-  ✔ Quando há alta eficiência e alta utilização, a produtividade tende a ser elevada.
-</p>
-
-<br>
-
-<h4 style="margin-bottom:10px;">⏱️ TMS (Tempo Médio de Serviço)</h4>
-
-<p>
-  <b>O que é:</b><br>
-  O TMS representa o tempo em que a equipe permanece em desvio de checklist antes de ser alocada a um serviço.
-</p>
-
-<br>
-
-<p>
-  <b>Como é contabilizado:</b><br>
-  É medido a partir do momento em que a equipe entra em desvio de checklist até a sua alocação em um atendimento.
-</p>
-
-<br>
-
-<p>
-  <b>Como proceder:</b><br>
-  A equipe deve permanecer em desvio de checklist por, no máximo, <b>18 minutos</b>, que é o tempo limite permitido até a alocação em um serviço.<br><br>
-  Após a alocação, a equipe deve sair da base imediatamente e se deslocar até a unidade consumidora para iniciar a execução do serviço.
-</p>
-
-<br>
-
-<p>
-  <b>Como evitar TMS fora da meta:</b><br>
-  A equipe não deve ultrapassar o tempo limite estabelecido de <b>18 minutos</b> em desvio de checklist.<br><br>
-  A saída deve ocorrer assim que o serviço for atribuído, garantindo o deslocamento imediato para início das atividades no local.
-</p>
-
-<br>
-
-<p style="color:#b3261e; font-weight:600;">
-  ⚠ Permanecer além do tempo limite impacta negativamente o indicador de TMS.
-</p>
-
-      <hr>
-
-      <h4>IPEO</h4>
-      <p><b>IPEO:</b> Indicador geral de performance operacional.</p>
-      <p><b>DI:</b> Índice de desligamentos.</p>
-      <p><b>ROE:</b> Regularização de ocorrências emergenciais.</p>
-      <p><b>RNT:</b> Regularização não técnica.</p>
-      <p><b>IOC:</b> Índice de ocorrências comerciais.</p>
-      <p><b>ISF:</b> Índice de segurança.</p>
-      <p><b>ROV:</b> Regularização de ordens vencidas.</p>
-
-      <hr>
-
-      <p style="color:#6b7280;">
-        💡 Dica: Valores em verde indicam meta atingida, vermelho indica abaixo da meta.
-      </p>
-
+    <div id="modalAjuda" class="chart-modal" onclick="fecharAjuda(event)">
+  <div class="help-modal-box" onclick="event.stopPropagation()">
+    <div class="help-header">
+      <div>
+        <h3>📘 Entenda os Indicadores</h3>
+        <div class="help-subtitle">Consulte o significado, cálculo e boas práticas de cada indicador.</div>
+      </div>
+      <button class="chart-close" onclick="fecharAjuda()">×</button>
     </div>
+
+    <div class="help-body">
+      <div class="help-tabs">
+        <button id="tabMIP" class="help-tab active" onclick="trocarAjuda('mip')">MIP</button>
+        <button id="tabIPEO" class="help-tab" onclick="trocarAjuda('ipeo')">IPEO</button>
+      </div>
+
+      <!-- MIP -->
+      <section id="ajudaMIP" class="help-section active">
+        <div class="help-grid">
+          <div class="help-card">
+            <span class="help-badge mip">MIP</span>
+            <h4>📊 Produtividade</h4>
+            <p><b>O que é:</b> Representa o desempenho geral da equipe, considerando o quanto foi produzido em relação ao esperado.</p>
+            <p><b>Como é calculada:</b></p>
+            <div class="help-formula">Eficiência × Utilização = Produtividade</div>
+            <p><b>Leitura prática:</b> Quando há alta eficiência e alta utilização, a produtividade tende a ser elevada.</p>
+          </div>
+
+          <div class="help-card">
+            <span class="help-badge mip">MIP</span>
+            <h4>⚙️ Eficiência</h4>
+            <p><b>O que é:</b> Avalia se as atividades foram executadas dentro do tempo padrão previsto.</p>
+            <p><b>Como interpretar:</b> Mostra o quão bem a equipe performa em relação ao tempo esperado para execução dos serviços.</p>
+          </div>
+
+          <div class="help-card">
+            <span class="help-badge mip">MIP</span>
+            <h4>🕒 Utilização</h4>
+            <p><b>O que é:</b> Mede quanto do tempo disponível da equipe foi efetivamente utilizado na execução dos serviços.</p>
+            <p><b>Como interpretar:</b> Quanto maior o aproveitamento do tempo operacional, melhor tende a ser o indicador.</p>
+          </div>
+
+          <div class="help-card">
+            <span class="help-badge mip">MIP</span>
+            <h4>⏱️ TMS</h4>
+            <p><b>O que é:</b> Representa o tempo em que a equipe permanece em desvio de checklist antes de ser alocada a um serviço.</p>
+            <p><b>Como é contabilizado:</b> É medido desde a entrada no desvio de checklist até a alocação em atendimento.</p>
+            <p><b>Como proceder:</b> A equipe deve permanecer por, no máximo, <b>18 minutos</b> até a alocação. Após isso, deve sair imediatamente para atendimento.</p>
+            <p><b>Como evitar fora da meta:</b> Não ultrapassar o tempo limite e iniciar o deslocamento assim que o serviço for atribuído.</p>
+            <p class="help-alert">⚠ Permanecer além do limite impacta negativamente o TMS.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- IPEO -->
+      <section id="ajudaIPEO" class="help-section">
+        <div class="help-grid">
+          <div class="help-card">
+            <span class="help-badge ipeo">IPEO</span>
+            <h4>📍 DI</h4>
+            <p><b>Deslocamento Improcedente.</b></p>
+            <p><b>Quando ocorre:</b> Ao atender uma ocorrência e encerrá-la com causa improcedente, como “UC NORMAL”.</p>
+            <p><b>Como proceder:</b> Encerrar assim que a improcedência for identificada e, se possível, gerar OS preventiva para correção de conexões.</p>
+            <p><b>Como evitar:</b> Realizar sempre call-back com o cliente antes da visita.</p>
+          </div>
+
+          <div class="help-card">
+            <span class="help-badge ipeo">IPEO</span>
+            <h4>🔁 ROE</h4>
+            <p><b>Reincidência de Ocorrências.</b></p>
+            <p><b>Quando ocorre:</b> Quando a UC apresenta reincidência em até 60 dias para uma ocorrência isolada.</p>
+            <p><b>Como proceder:</b> Encerrar com a causa correta e corrigir todas as possíveis fontes do defeito.</p>
+            <p><b>Como evitar:</b> Avaliar conexões, ramal e medição, realizando correções preventivas.</p>
+          </div>
+
+          <div class="help-card">
+            <span class="help-badge ipeo">IPEO</span>
+            <h4>⚡ RNT</h4>
+            <p><b>Reincidência de Nível de Tensão.</b></p>
+            <p><b>Quando ocorre:</b> Quando há reincidência de ocorrências de nível de tensão em até 60 dias.</p>
+            <p><b>Como proceder:</b> Encerrar com a causa correta e atender, sempre que possível, no horário da reclamação.</p>
+            <p><b>Como evitar:</b> Avaliar conexões e possíveis defeitos até o transformador que atende a UC.</p>
+          </div>
+
+          <div class="help-card">
+            <span class="help-badge ipeo">IPEO</span>
+            <h4>📄 IOC</h4>
+            <p><b>Impedimento de OS Comerciais.</b></p>
+            <p><b>Quando ocorre:</b> Quando uma OS comercial, exceto corte, é impedida.</p>
+            <p><b>Como proceder:</b> Encerrar com a causa correta e registrar fotos e evidências.</p>
+            <p><b>Como evitar:</b> Realizar contato prévio com o cliente antes da visita.</p>
+          </div>
+
+          <div class="help-card">
+            <span class="help-badge ipeo">IPEO</span>
+            <h4>⛔ ISF</h4>
+            <p><b>Impedimento de Suspensão de Fornecimento.</b></p>
+            <p><b>Quando ocorre:</b> Quando uma OS de corte é impedida.</p>
+            <p><b>Como proceder:</b> Encerrar corretamente e registrar evidências com fotos.</p>
+            <p><b>Como evitar:</b> Se a UC estiver fechada, realizar o corte no poste.</p>
+          </div>
+
+          <div class="help-card">
+            <span class="help-badge ipeo">IPEO</span>
+            <h4>✅ ROV</h4>
+            <p><b>Reprovação de OS de Vistoria.</b></p>
+            <p><b>Quando ocorre:</b> Quando uma OS de vistoria é reprovada.</p>
+            <p><b>Como proceder:</b> Registrar todos os itens de reprovação com fotos e formulário entregue ao cliente.</p>
+            <p><b>Como evitar:</b> Solicitar localização e fotos do padrão antes do deslocamento e orientar corretamente em campo.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="help-note">
+        💡 <b>Dica:</b> no dashboard, valores em verde indicam meta atingida. Valores em vermelho mostram necessidade de atenção.
+      </div>
+    </div>
+  </div>
+</div>
   </div>
 </div>
 
@@ -997,6 +1183,35 @@ function fecharAjuda(event){
   let n = Number(v || 0);
   if (!Number.isFinite(n)) return 0;
   return n;
+}
+    function abrirAjuda(secao = "mip"){
+  document.getElementById("modalAjuda").classList.add("show");
+  trocarAjuda(secao);
+}
+
+function fecharAjuda(event){
+  if (event && event.target && event.target.id !== "modalAjuda") return;
+  document.getElementById("modalAjuda").classList.remove("show");
+}
+
+function trocarAjuda(secao){
+  const tabMIP = document.getElementById("tabMIP");
+  const tabIPEO = document.getElementById("tabIPEO");
+  const ajudaMIP = document.getElementById("ajudaMIP");
+  const ajudaIPEO = document.getElementById("ajudaIPEO");
+
+  tabMIP.classList.remove("active");
+  tabIPEO.classList.remove("active");
+  ajudaMIP.classList.remove("active");
+  ajudaIPEO.classList.remove("active");
+
+  if (secao === "ipeo"){
+    tabIPEO.classList.add("active");
+    ajudaIPEO.classList.add("active");
+  } else {
+    tabMIP.classList.add("active");
+    ajudaMIP.classList.add("active");
+  }
 }
 
     function setLoginMsg(texto, tipo = "error"){
