@@ -731,6 +731,11 @@
           </div>
 
           <div>
+  <label for="filtroNome">Nome</label>
+  <input id="filtroNome" class="input" type="text" placeholder="Ex.: Pedro" />
+</div>
+
+          <div>
             <label for="filtroMes">Mês</label>
             <select id="filtroMes" class="input">
               <option value="">Todos</option>
@@ -957,8 +962,10 @@
     function limparFiltros(){
       const fMat = document.getElementById("filtroMatricula");
       const fMes = document.getElementById("filtroMes");
+      const fNome = document.getElementById("filtroNome");
       if (fMat) fMat.value = "";
       if (fMes) fMes.value = "";
+      if (fNome) fNome.value = "";
       carregarDados();
     }
 
@@ -1061,6 +1068,7 @@
       const cardsMIP = document.getElementById("cardsMIP");
       const cardsIPEO = document.getElementById("cardsIPEO");
       const tbody = document.getElementById("tbodyResultados");
+      
 
       cardsMIP.classList.add("loading");
       cardsIPEO.classList.add("loading");
@@ -1075,9 +1083,11 @@
         if (usuarioLogado.isAdmin){
           const matricula = document.getElementById("filtroMatricula").value.trim();
           const mes = document.getElementById("filtroMes").value.trim();
+          const nome = document.getElementById("filtroNome")?.value.trim();
 
           if (matricula) params.set("matricula", matricula);
           if (mes) params.set("mes", mes);
+          if (nome) params.set("nome", nome);
         }
 
         const url = API_BASE + "/ipeo-dashboard" + (params.toString() ? `?${params.toString()}` : "");
