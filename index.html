@@ -975,12 +975,14 @@
 
       try{
         const res = await fetch(API_BASE + "/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            matricula: matricula,
-          })
-        });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    matricula: matricula,
+    senha: senha
+  })
+});
+        console.log("LOGIN RESPONSE:", data);
 
         const data = await res.json();
 
