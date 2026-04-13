@@ -1059,14 +1059,14 @@
       if (!usuarioLogado) return;
 
       const cardsMIP = document.getElementById("cardsMIP");
-const cardsIPEO = document.getElementById("cardsIPEO");
-const tbody = document.getElementById("tbodyResultados");
+      const cardsIPEO = document.getElementById("cardsIPEO");
+      const tbody = document.getElementById("tbodyResultados");
 
-cardsMIP.classList.add("loading");
-cardsIPEO.classList.add("loading");
+      cardsMIP.classList.add("loading");
+      cardsIPEO.classList.add("loading");
 
 
-      cards.classList.add("loading");
+      
       tbody.innerHTML = `<tr><td colspan="14" class="empty">Carregando...</td></tr>`;
 
       try{
@@ -1096,7 +1096,8 @@ cardsIPEO.classList.add("loading");
         renderCards([]);
         tbody.innerHTML = `<tr><td colspan="14" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
       } finally{
-        cards.classList.remove("loading");
+        cardsMIP.classList.remove("loading");
+        cardsIPEO.classList.remove("loading");
       }
     }
 
