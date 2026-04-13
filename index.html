@@ -963,39 +963,46 @@
     }
 
     async function login(){
-      limparLoginMsg();
+  limparLoginMsg();
 
-      const matricula = document.getElementById("matricula").value.trim();
-      const senha = document.getElementById("senha").value.trim();
+  const matricula = document.getElementById("matricula").value.trim();
+  const senha = document.getElementById("senha").value.trim();
 
-      if (!matricula || !senha){
-        setLoginMsg("Informe matrícula e senha.");
-        return;
-      }
+  if (!matricula || !senha){
+    setLoginMsg("Informe matrícula e senha.");
+    return;
+  }
 
-      try{
-        const res = await fetch(API_BASE + "/login", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    matricula: matricula,
-    senha: senha
-  })
-});
-        console.log("LOGIN RESPONSE:", data);
+  try{
+    const payload = {
+      matricula: matricula,
+      senha: senha
+    };
 
-        const data = await res.json();
+    console.log("payload login:", payload);
 
-        if (!res.ok || (!data.ok && !data.sucesso)) {
-          throw new Error(data.error || data.erro || "Falha no login");
-        }
+    const res = await fetch(API_BASE + "/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-        setToken(data.token);
-        await validarSessao();
-      } catch (err) {
-        setLoginMsg(err.message || "Não foi possível entrar.");
-      }
+    const data = await res.json();
+    console.log("status login:", res.status);
+    console.log("resposta login:", data);
+
+    if (!res.ok || (!data.ok && !data.sucesso)) {
+      throw new Error(data.error || data.erro || "Falha no login");
     }
+
+    setToken(data.token);
+    await validarSessao();
+  } catch (err) {
+    setLoginMsg(err.message || "Não foi possível entrar.");
+  }
+}
+
+    
     async function validarSessao(){
   const token = getToken();
 
@@ -1051,8 +1058,13 @@
     async function carregarDados(){
       if (!usuarioLogado) return;
 
-      const cards = document.getElementById("cards");
-      const tbody = document.getElementById("tbodyResultados");
+      const cardsMIP = document.getElementById("cardsMIP");
+const cardsIPEO = document.getElementById("cardsIPEO");
+const tbody = document.getElementById("tbodyResultados");
+
+cardsMIP.classList.add("loading");
+cardsIPEO.classList.add("loading");
+
 
       cards.classList.add("loading");
       tbody.innerHTML = `<tr><td colspan="14" class="empty">Carregando...</td></tr>`;
