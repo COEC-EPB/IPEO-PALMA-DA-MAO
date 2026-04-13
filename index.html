@@ -716,6 +716,10 @@
           <button class="btn btn-soft" onclick="carregarDados()">
             <i class="bi bi-arrow-clockwise"></i> Atualizar
           </button>
+
+          <button class="btn btn-soft" onclick="abrirAjuda()">
+          <i class="bi bi-info-circle"></i> Entender indicadores
+        </button>
         </div>
       </div>
 
@@ -860,6 +864,43 @@
     </div>
   </div>
 
+  <div id="modalAjuda" class="chart-modal" onclick="fecharAjuda(event)">
+  <div class="chart-box" onclick="event.stopPropagation()">
+    
+    <div class="chart-header">
+      <h3>📊 Entenda os Indicadores</h3>
+      <button class="chart-close" onclick="fecharAjuda()">×</button>
+    </div>
+
+    <div class="chart-body" style="max-height:70vh; overflow:auto; font-size:14px; line-height:1.6">
+
+      <h4>MIP</h4>
+      <p><b>Produtividade:</b> Mede o quanto foi produzido em relação ao esperado.</p>
+      <p><b>Eficiência:</b> Avalia o desempenho da execução comparado ao padrão.</p>
+      <p><b>Utilização:</b> Indica o aproveitamento do tempo disponível.</p>
+      <p><b>TMS:</b> Tempo médio de serviço.</p>
+
+      <hr>
+
+      <h4>IPEO</h4>
+      <p><b>IPEO:</b> Indicador geral de performance operacional.</p>
+      <p><b>DI:</b> Índice de desligamentos.</p>
+      <p><b>ROE:</b> Regularização de ocorrências emergenciais.</p>
+      <p><b>RNT:</b> Regularização não técnica.</p>
+      <p><b>IOC:</b> Índice de ocorrências comerciais.</p>
+      <p><b>ISF:</b> Índice de segurança.</p>
+      <p><b>ROV:</b> Regularização de ordens vencidas.</p>
+
+      <hr>
+
+      <p style="color:#6b7280;">
+        💡 Dica: Valores em verde indicam meta atingida, vermelho indica abaixo da meta.
+      </p>
+
+    </div>
+  </div>
+</div>
+
   <script>
     const API_BASE = "https://ipeo-palma-da-mao.pedro-fillype.workers.dev/api";
     let usuarioLogado = null;
@@ -879,6 +920,15 @@
   "UTILIZAÇÃO": 86.75,
   TMS: 19
 };
+
+    function abrirAjuda(){
+  document.getElementById("modalAjuda").classList.add("show");
+}
+
+function fecharAjuda(event){
+  if (event && event.target && event.target.id !== "modalAjuda") return;
+  document.getElementById("modalAjuda").classList.remove("show");
+}
 
     function normalizarPercentual(v){
   let n = Number(v || 0);
