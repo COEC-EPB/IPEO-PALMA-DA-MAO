@@ -787,6 +787,16 @@
       grid-template-columns:1fr;
     }
   }
+    .field-help{
+  display:block;
+  margin-top:8px;
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.4;
+}
+    .field-help i{
+  margin-right:4px;
+}
   </style>
 </head>
 <body>
@@ -804,15 +814,17 @@
       </div>
 
       <div class="field">
-        <label for="matricula">Matrícula</label>
-        <input id="matricula" class="input" type="text" placeholder="Digite sua matrícula" />
-      </div>
+  <label for="matricula">Matrícula</label>
+  <input id="matricula" class="input" type="text" placeholder="Digite sua matrícula" />
+</div>
 
-      <div class="field">
-        <label for="senha">Senha</label>
-        <input id="senha" class="input" type="password" placeholder="Digite sua senha" />
-        <label for="senha">Mesmo usuário da página do ADD</label>
-      </div>
+<div class="field">
+  <label for="senha">Senha</label>
+  <input id="senha" class="input" type="password" placeholder="Digite sua senha" />
+  <small class="field-help">
+    <i class="bi bi-info-circle"></i> Use o mesmo usuário e senha cadastrados na página do ADD.
+  </small>
+</div>
 
       <button class="btn btn-primary btn-full" onclick="login()">Entrar</button>
       <div id="loginMsg" class="msg"></div>
