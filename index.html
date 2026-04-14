@@ -942,9 +942,15 @@
 
       <section id="resultadosPage" class="hidden">
         <div class="panel">
-          <div class="panel-title">
-            <i class="bi bi-table"></i> Resultados detalhados
-          </div>
+          <div class="panel-title" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <i class="bi bi-table"></i> Resultados detalhados
+  </div>
+
+  <button class="btn btn-soft" onclick="baixarResultadosFiltrados()">
+    <i class="bi bi-download"></i> Baixar Excel
+  </button>
+</div>
 
           <div class="table-wrap">
             <table>
@@ -1161,6 +1167,53 @@
   "UTILIZAÇÃO": 86.75,
   TMS: 19
 };
+
+    function baixarResultadosFiltrados(){
+  if (!ultimoResultadoDetalhado || !ultimoResultadoDetalhado.length){
+    alert("Não há resultados para exportar.");
+    return;
+  }
+
+  const dados = ultimoResultadoDetalhado.map(item => ({
+    "Matrícula": item.matricula || "",
+    "Nome": item.nome || "",
+    "Mês": item.mes || "",
+    "% IPEO": Number(item.ipeo || 0),
+    "% DI": Number(item.di || 0),
+    "% ROE": Number(item.roe || 0),
+    "% RNT": Number(item.rnt || 0),
+    "% IOC": Number(item.ioc || 0),
+    "% ISF": Number(item.isf || 0),
+    "% ROV": Number(item.rov || 0),
+    "% Produtividade": Number(item.produtividade || 0),
+    "% Eficiência": Number(item.eficiencia || 0),
+    "% Utilização": Number(item.utilizacao || 0),
+    "TMS": Number(item.tms || 0)
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(dados);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+
+  let nomeArquivo = "resultados_ipeo";
+
+  if (usuarioLogado?.isAdmin){
+    const matricula = document.getElementById("filtroMatricula")?.value.trim();
+    const nome = document.getElementById("filtroNome")?.value.trim();
+    const mes = document.getElementById("filtroMes")?.value.trim();
+
+    if (matricula) nomeArquivo += `_matricula_${matricula}`;
+    if (nome) nomeArquivo += `_nome_${nome.replace(/\s+/g, "_")}`;
+    if (mes) nomeArquivo += `_mes_${mes}`;
+  } else {
+    nomeArquivo += `_${usuarioLogado?.matricula || "usuario"}`;
+  }
+
+  nomeArquivo += ".xlsx";
+
+  XLSX.writeFile(wb, nomeArquivo);
+}
 
     function abrirAjuda(){
   document.getElementById("modalAjuda").classList.add("show");
