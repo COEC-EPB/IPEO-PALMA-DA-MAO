@@ -964,26 +964,32 @@
     <i class="bi bi-download"></i> Baixar Excel
   </button>
 </div>
+          <select id="filtroOrdenacao" class="input" onchange="carregarDados()">
+  <option value="">Padrão</option>
+  <option value="IPEO">Maior IPEO</option>
+  <option value="MIP">Maior MIP</option>
+</select>
 
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Matrícula</th>
-                  <th>Nome</th>
-                  <th>Mês</th>
-                  <th>% IPEO</th>
-                  <th>% DI</th>
-                  <th>% ROE</th>
-                  <th>% RNT</th>
-                  <th>% IOC</th>
-                  <th>% ISF</th>
-                  <th>% ROV</th>
-                  <th>% Produtividade</th>
-                  <th>% Eficiência</th>
-                  <th>% Utilização</th>
-                  <th>TMS</th>
-                </tr>
+                <th>Matrícula</th>
+                <th>Nome</th>
+                <th>Prestador</th>
+                <th>Mês</th>
+                <th>% IPEO</th>
+                <th>% DI</th>
+                <th>% ROE</th>
+                <th>% RNT</th>
+                <th>% IOC</th>
+                <th>% ISF</th>
+                <th>% ROV</th>
+                <th>% Produtividade</th>
+                <th>% Eficiência</th>
+                <th>% Utilização</th>
+                <th>TMS</th>
+              </tr>
               </thead>
               <tbody id="tbodyResultados">
                 <tr><td colspan="14" class="empty">Nenhum dado carregado.</td></tr>
@@ -1226,6 +1232,44 @@
   nomeArquivo += ".xlsx";
 
   XLSX.writeFile(wb, nomeArquivo);
+}
+    function aplicarOrdenacao(lista){
+ const tipo = document.getElementById('filtroOrdenacao')?.value || '';
+ const arr = [...lista];
+ if(tipo === 'IPEO') arr.sort((a,b)=>Number(b.ipeo||0)-Number(a.ipeo||0));
+ if(tipo === 'MIP') arr.sort((a,b)=>Number(b.produtividade||0)-Number(a.produtividade||0));
+ return arr;
+}
+
+async function carregarDados(){
+ if(!usuarioLogado) return;
+ const res = await fetch(API_BASE + '/ipeo-dashboard', { headers: authHeaders() });
+ const data = await res.json();
+ ultimoResultadoDetalhado = aplicarOrdenacao(data.resultados || []);
+ renderTabela(ultimoResultadoDetalhado);
+ renderCards(data.kpis || []);
+}
+
+function renderTabela(lista){
+ const el = document.getElementById('tbodyResultados');
+ el.innerHTML = lista.map(item => `
+ <tr>
+  <td>${item.matricula||'-'}</td>
+  <td>${item.nome||'-'}</td>
+  <td>${item.prestador||'-'}</td>
+  <td>${item.mes||'-'}</td>
+  <td>${formatPercent(item.ipeo)}</td>
+  <td>${formatPercent(item.di)}</td>
+  <td>${formatPercent(item.roe)}</td>
+  <td>${formatPercent(item.rnt)}</td>
+  <td>${formatPercent(item.ioc)}</td>
+  <td>${formatPercent(item.isf)}</td>
+  <td>${formatPercent(item.rov)}</td>
+  <td>${formatPercent(item.produtividade)}</td>
+  <td>${formatPercent(item.eficiencia)}</td>
+  <td>${formatPercent(item.utilizacao)}</td>
+  <td>${formatNumero(item.tms)}</td>
+ </tr>`).join('');
 }
 
     function abrirAjuda(){
