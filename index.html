@@ -1569,42 +1569,47 @@ function aplicarEstadoFiltrosSalvo(){
   }
 
   async function validarSessao() {
-    const token = getToken();
+  const token = getToken();
 
-    if (!token) {
-      clearToken();
-      usuarioLogado = null;
-      document.getElementById("loginScreen").classList.remove("hidden");
-      document.getElementById("appScreen").classList.add("hidden");
-      return;
-    }
-
-    try {
-      const res = await fetch(API_BASE + "/me", { headers: authHeaders() });
-      const data = await res.json();
-
-      if (!res.ok || !data.ok) throw new Error(data.error || "Sessão inválida");
-
-      usuarioLogado = data.usuario;
-
-      document.getElementById("loginScreen").classList.add("hidden");
-      document.getElementById("appScreen").classList.remove("hidden");
-
-      document.getElementById("sidebarUserName").textContent = usuarioLogado.nome || "Usuário";
-      document.getElementById("sidebarUserInfo").textContent =
-        `${usuarioLogado.matricula} • ${usuarioLogado.isAdmin ? "Administrador" : "Colaborador"}`;
-
-      document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
-      document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
-
-      await carregarDados();
-    } catch (err) {
-      clearToken();
-      usuarioLogado = null;
-      document.getElementById("loginScreen").classList.remove("hidden");
-      document.getElementById("appScreen").classList.add("hidden");
-    }
+  if (!token) {
+    clearToken();
+    usuarioLogado = null;
+    document.getElementById("loginScreen").classList.remove("hidden");
+    document.getElementById("appScreen").classList.add("hidden");
+    return;
   }
+
+  try {
+    const res = await fetch(API_BASE + "/me", { headers: authHeaders() });
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) throw new Error(data.error || "Sessão inválida");
+
+    usuarioLogado = data.usuario;
+
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("appScreen").classList.remove("hidden");
+
+    document.getElementById("sidebarUserName").textContent = usuarioLogado.nome || "Usuário";
+    document.getElementById("sidebarUserInfo").textContent =
+      `${usuarioLogado.matricula} • ${usuarioLogado.isAdmin ? "Administrador" : "Colaborador"}`;
+
+    document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
+    document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
+
+    // ✅ AQUI é o lugar certo
+    if (usuarioLogado.isAdmin) {
+      aplicarEstadoFiltrosSalvo();
+    }
+
+    await carregarDados();
+  } catch (err) {
+    clearToken();
+    usuarioLogado = null;
+    document.getElementById("loginScreen").classList.remove("hidden");
+    document.getElementById("appScreen").classList.add("hidden");
+  }
+}
    
 
   function logout() {
