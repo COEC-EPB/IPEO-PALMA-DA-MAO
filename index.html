@@ -944,6 +944,18 @@
         </div>
 
         <div class="filters">
+
+          
+<div>
+  <label for="filtroRegional">Regional</label>
+  <input id="filtroRegional" class="input" type="text" placeholder="Ex.: CENTRO" />
+</div>
+
+<div>
+  <label for="filtroPolo">Polo</label>
+  <input id="filtroPolo" class="input" type="text" placeholder="Ex.: Solânea" />
+</div>
+
           <div>
             <label for="filtroMatricula">Matrícula</label>
             <input id="filtroMatricula" class="input" type="text" placeholder="Ex.: 3080117" />
@@ -1037,6 +1049,8 @@
             <table>
               <thead>
                 <tr>
+                <th>Regional</th>
+                <th>Polo</th>
                 <th>Matrícula</th>
                 <th>Nome</th>
                 <th>Prestador</th>
@@ -1359,10 +1373,14 @@
     const fMat = document.getElementById("filtroMatricula");
     const fMes = document.getElementById("filtroMes");
     const fNome = document.getElementById("filtroNome");
+    const fRegional = document.getElementById("filtroRegional");
+    const fPolo = document.getElementById("filtroPolo");
 
     if (fMat) fMat.value = "";
     if (fMes) fMes.value = "";
     if (fNome) fNome.value = "";
+    if (fRegional) fRegional.value = "";
+    if (fPolo) fPolo.value = "";
 
     carregarDados();
   }
@@ -1506,10 +1524,15 @@
         const matricula = document.getElementById("filtroMatricula")?.value.trim();
         const mes = document.getElementById("filtroMes")?.value.trim();
         const nome = document.getElementById("filtroNome")?.value.trim();
+        const regional = document.getElementById("filtroRegional")?.value.trim();
+        const polo = document.getElementById("filtroPolo")?.value.trim();
+
 
         if (matricula) params.set("matricula", matricula);
         if (mes) params.set("mes", mes);
         if (nome) params.set("nome", nome);
+        if (regional) params.set("regional", regional);
+        if (polo) params.set("polo", polo);
       }
 
       const url = API_BASE + "/ipeo-dashboard" + (params.toString() ? `?${params.toString()}` : "");
@@ -1541,6 +1564,8 @@
 
     el.innerHTML = lista.map(item => `
       <tr>
+        <td>${item.regional || "-"}</td>
+        <td>${item.polo || "-"}</td>
         <td>${item.matricula || "-"}</td>
         <td>${item.nome || "-"}</td>
         <td>${item.prestador || "-"}</td>
@@ -1657,6 +1682,8 @@
     }
 
     const dados = ultimoResultadoDetalhado.map(item => ({
+      "Regional": item.regional || "",
+      "Polo": item.polo || "",
       "Matrícula": item.matricula || "",
       "Nome": item.nome || "",
       "Prestador": item.prestador || "",
