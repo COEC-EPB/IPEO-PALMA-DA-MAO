@@ -1033,21 +1033,33 @@
   <input id="filtroNome" class="input input-sm" type="text" placeholder="Ex.: Pedro" />
 </div>
           
+
 <div>
   <label for="filtroRegional">Regional</label>
-  <input id="filtroRegional" class="input input-sm" type="text" placeholder="Ex.: CENTRO" />
+  <select id="filtroRegional" class="input input-sm" onchange="onFiltroRegionalChange()">
+    <option value="">Todas</option>
+  </select>
 </div>
+
+
 
 <div>
   <label for="filtroPolo">Polo</label>
-  <input id="filtroPolo" class="input input-sm" type="text" placeholder="Ex.: Solânea" />
+  <select id="filtroPolo" class="input input-sm" onchange="onFiltroPoloChange()">
+    <option value="">Todos</option>
+  </select>
 </div>
 
+
           
+
 <div>
   <label for="filtroPrestador">Prestador</label>
-  <input id="filtroPrestador" class="input input-sm" type="text" placeholder="Ex.: ENERGISA / TERCEIRO" />
+  <select id="filtroPrestador" class="input input-sm" onchange="carregarDados()">
+    <option value="">Todos</option>
+  </select>
 </div>
+
 
 
           <div>
@@ -1350,6 +1362,70 @@
     TMS: 19
   };
 
+   function setOptions(selectEl, values, placeholder = "Todos") {
+  if (!selectEl) return;
+
+  const prev = selectEl.value || "";
+  const opts = [`<option value="">${placeholder}</option>`]
+    .concat((values || []).map(v => `<option value="${String(v).replaceAll('"','&quot;')}">${v}</option>`));
+
+  selectEl.innerHTML = opts.join("");
+
+  // tenta manter seleção anterior se ainda existir
+  if (prev && (values || []).includes(prev)) selectEl.value = prev;
+}
+
+async function carregarOpcoesFiltros() {
+  if (!usuarioLogado) return;
+
+  const selRegional = document.getElementById("filtroRegional");
+  const selPolo = document.getElementById("filtroPolo");
+  const selPrest = document.getElementById("filtroPrestador");
+  const selMes = document.getElementById("filtroMes");
+
+  // Monta params para dependência (regional -> polos)
+  const params = new URLSearchParams();
+
+  // opcional: se quiser filtrar opções também por mês
+  const mes = selMes?.value?.trim();
+  if (mes) params.set("mes", mes);
+
+  const regional = selRegional?.value?.trim();
+  if (regional) params.set("regional", regional);
+
+  const polo = selPolo?.value?.trim();
+  if (polo) params.set("polo", polo);
+
+  const url = API_BASE + "/ipeo-filtros" + (params.toString() ? `?${params.toString()}` : "");
+  const res = await fetch(url, { headers: authHeaders() });
+  const data = await res.json();
+
+  if (!res.ok || !data.ok) {
+    console.warn("Falha ao carregar opções de filtros:", data);
+    return;
+  }
+
+  // Preenche selects
+  setOptions(selRegional, data.regionais || [], "Todas");
+  setOptions(selPolo, data.polos || [], "Todos");
+  setOptions(selPrest, data.prestadores || [], "Todos");
+}
+
+// Quando muda Regional, recarrega Polos/Prestadores
+async function onFiltroRegionalChange() {
+  const selPolo = document.getElementById("filtroPolo");
+  if (selPolo) selPolo.value = ""; // reset polo ao trocar regional
+  await carregarOpcoesFiltros();
+  carregarDados();
+}
+
+// Quando muda Polo, pode refinar prestadores também
+async function onFiltroPoloChange() {
+  await carregarOpcoesFiltros();
+  carregarDados();
+}
+
+
    function setToggleUI(collapsed){
   const body = document.getElementById("adminFiltersBody");
   const icon = document.getElementById("iconToggleFiltros");
@@ -1601,10 +1677,11 @@ function aplicarEstadoFiltrosSalvo(){
 
     document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
     document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
-
+    
     // ✅ AQUI é o lugar certo
     if (usuarioLogado.isAdmin) {
       aplicarEstadoFiltrosSalvo();
+      await carregarOpcoesFiltros();
     }
 
     await carregarDados();
