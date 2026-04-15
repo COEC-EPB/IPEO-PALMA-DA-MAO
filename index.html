@@ -797,6 +797,58 @@
     .field-help i{
   margin-right:4px;
 }
+    
+.ordem-box{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  max-width:260px;
+}
+
+.ordem-label{
+  font-size:13px;
+  font-weight:700;
+  color:#475569;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.ordem-select-wrap{
+  position:relative;
+}
+
+.ordem-select{
+  width:100%;
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:13px 44px 13px 14px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.ordem-select:focus{
+  outline:none;
+  border-color:var(--primary);
+  box-shadow:0 0 0 4px rgba(0,151,206,.12);
+}
+
+.ordem-select-wrap i{
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:16px;
+  color:#64748b;
+  pointer-events:none;
+}
+
   </style>
 </head>
 <body>
