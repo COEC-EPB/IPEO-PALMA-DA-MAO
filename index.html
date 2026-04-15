@@ -1605,6 +1605,7 @@ function aplicarEstadoFiltrosSalvo(){
       document.getElementById("appScreen").classList.add("hidden");
     }
   }
+   
 
   function logout() {
     clearToken();
@@ -2031,18 +2032,17 @@ function aplicarEstadoFiltrosSalvo(){
       setImportMsg(err.message || "Erro ao importar arquivo.", "error");
     }
   }
+      document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
+document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
 
   // Auto-login
   const tokenInicial = getToken();
   if (tokenInicial) validarSessao();
-   
-document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
-document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
 
 if (usuarioLogado.isAdmin) {
   aplicarEstadoFiltrosSalvo();
 }
-
+   
 </script>
 </body>
 </html>
