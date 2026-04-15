@@ -1167,7 +1167,7 @@
               </tr>
               </thead>
               <tbody id="tbodyResultados">
-                <tr><td colspan="15" class="empty">Nenhum dado carregado.</td></tr>
+                <tr><td colspan="17" class="empty">Nenhum dado carregado.</td></tr>
               </tbody>
             </table>
           </div>
@@ -1717,7 +1717,7 @@ function aplicarEstadoFiltrosSalvo(){
     cardsMIP.classList.add("loading");
     cardsIPEO.classList.add("loading");
 
-    tbody.innerHTML = `<tr><td colspan="15" class="empty">Carregando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="17" class="empty">Carregando...</td></tr>`;
 
     try {
       const params = new URLSearchParams();
@@ -1750,7 +1750,7 @@ function aplicarEstadoFiltrosSalvo(){
     } catch (err) {
       ultimoResultadoDetalhado = [];
       renderCards([]);
-      tbody.innerHTML = `<tr><td colspan="15" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="17" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
     } finally {
       cardsMIP.classList.remove("loading");
       cardsIPEO.classList.remove("loading");
@@ -1761,7 +1761,7 @@ function aplicarEstadoFiltrosSalvo(){
     const el = document.getElementById("tbodyResultados");
 
     if (!lista.length) {
-      el.innerHTML = `<tr><td colspan="15" class="empty">Nenhum resultado encontrado.</td></tr>`;
+      el.innerHTML = `<tr><td colspan="17" class="empty">Nenhum resultado encontrado.</td></tr>`;
       return;
     }
 
@@ -1926,6 +1926,58 @@ function aplicarEstadoFiltrosSalvo(){
     XLSX.writeFile(wb, nomeArquivo);
   }
 
+   function calcularEscalaY(valores, meta, indicador) {
+  const nums = (valores || [])
+    .filter(v => v !== null && v !== undefined)
+    .map(Number)
+    .filter(Number.isFinite);
+
+  const m = Number(meta);
+  if (Number.isFinite(m) && m !== 0) nums.push(m);
+
+  // fallback se não tiver dados
+  if (!nums.length) {
+    return indicador === "TMS"
+      ? { min: 0, max: 30, step: 2 }
+      : { min: 70, max: 100, step: 5 };
+  }
+
+  const minV = Math.min(...nums);
+  const maxV = Math.max(...nums);
+
+  // Configurações por tipo
+  const isTms = indicador === "TMS";
+
+  // Degraus (step) e folga (padding)
+  const step = isTms ? 2 : 2;        // % em 2 p.p. (troque p/ 5 se quiser mais “largo”)
+  const padding = isTms ? 2 : 3;     // folga pra não encostar no topo
+
+  // Arredonda para degraus "certinhos"
+  let min = Math.floor((minV - padding) / step) * step;
+  let max = Math.ceil((maxV + padding) / step) * step;
+
+  // Proteções para %: nunca passar de 0-100 em geral
+  if (!isTms) {
+    min = Math.max(0, min);
+    max = Math.min(100, max);
+
+    // se ficou muito apertado, abre um pouco
+    if (max - min < 6) {
+      min = Math.max(0, min - step * 2);
+      max = Math.min(100, max + step * 2);
+    }
+  } else {
+    // para TMS não deixa range pequeno demais
+    if (max - min < 6) {
+      min = Math.max(0, min - step * 2);
+      max = max + step * 2;
+    }
+  }
+
+  return { min, max, step };
+}
+
+
   // =========================
   // Gráfico
   // =========================
@@ -1983,52 +2035,58 @@ function aplicarEstadoFiltrosSalvo(){
     }
 
     const ctx = document.getElementById("indicatorChart").getContext("2d");
+    
+const metaVal = Number(METAS[indicador] || 0);
+const escala = calcularEscalaY(valores, metaVal, indicador);
+
 
     indicadorChart = new Chart(ctx, {
       type: "line",
       data: {
         labels,
-        datasets: [
-          {
-            label: indicador,
-            data: valores,
-            tension: 0.3,
-            fill: false,
-            stepped: true,
-            borderWidth: 3,
-            pointRadius: 4,
-            pointHoverRadius: 5,
-            spanGaps: true,
-            borderColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
-            backgroundColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
-            datalabels: {
-              display: true,
-              align: "top",
-              anchor: "end",
-              offset: 4,
-              clamp: true,
-              formatter: (value) => {
-                if (value == null) return "";
-                return indicador === "TMS"
-                  ? value.toFixed(1).replace(".", ",")
-                  : `${value.toFixed(1).replace(".", ",")}%`;
-              },
-              font: { size: 10, weight: "600" }
-            }
-          },
-          {
-            label: "Meta",
-            data: mesesFixos.map(() => Number(METAS[indicador] || 0)),
-            tension: 0,
-            fill: false,
-            borderDash: [6, 6],
-            borderWidth: 2,
-            pointRadius: 0,
-            borderColor: "#ff6384",
-            backgroundColor: "#ff6384",
-            datalabels: { display: false }
-          }
-        ]
+        
+datasets: [
+  {
+    label: indicador,
+    data: valores,
+    stepped: true,   // ✅ escadinha (mensal)
+    tension: 0,      // ✅ sem curva (combina com stepped)
+    fill: false,
+    borderWidth: 3,
+    pointRadius: 4,
+    pointHoverRadius: 5,
+    spanGaps: true,
+    borderColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
+    backgroundColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
+    datalabels: {
+      display: true,
+      align: "top",
+      anchor: "end",
+      offset: 4,
+      clamp: true,
+      formatter: (value) => {
+        if (value == null) return "";
+        return indicador === "TMS"
+          ? value.toFixed(1).replace(".", ",")
+          : `${value.toFixed(1).replace(".", ",")}%`;
+      },
+      font: { size: 10, weight: "600" }
+    }
+  },
+  {
+    label: "Meta",
+    data: mesesFixos.map(() => Number(METAS[indicador] || 0)),
+    tension: 0,
+    stepped: true,        // ✅ meta reta por degrau (opcional)
+    fill: false,
+    borderDash: [6, 6],
+    borderWidth: 2,
+    pointRadius: 0,
+    borderColor: "#ff6384",
+    backgroundColor: "#ff6384",
+    datalabels: { display: false }
+  }
+]
       },
       options: {
         responsive: true,
@@ -2049,17 +2107,26 @@ function aplicarEstadoFiltrosSalvo(){
           }
         },
         scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function (value) {
-                return indicador === "TMS"
-                  ? Number(value).toFixed(0).replace(".", ",")
-                  : Number(value).toFixed(0).replace(".", ",") + "%";
-              }
-            }
-          }
-        }
+  y: {
+    beginAtZero: false,
+    min: escala.min,
+    max: escala.max,
+    ticks: {
+      stepSize: escala.step,
+      callback: function(value){
+        return indicador === "TMS"
+          ? Number(value).toFixed(0).replace(".", ",")
+          : Number(value).toFixed(0).replace(".", ",") + "%";
+      }
+    },
+    grid: {
+      color: "rgba(148,163,184,.25)"
+    }
+  },
+  x: {
+    grid: { display: false }
+  }
+}
       },
       plugins: [ChartDataLabels]
     });
