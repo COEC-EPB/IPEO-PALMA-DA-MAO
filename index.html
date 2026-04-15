@@ -1167,70 +1167,722 @@
   </div>
 </div>
 
-<script>
-  if (!ultimoResultadoDetalhado.length) {
+  <script>
+    const API_BASE = "https://ipeo-palma-da-mao.pedro-fillype.workers.dev/api";
+    let usuarioLogado = null;
+    let ultimoResultadoDetalhado = [];
+    let indicadorChart = null;
+
+    const METAS = {
+  IPEO: 91.50,
+  DI: 8.67,
+  ROE: 4.18,
+  RNT: 5.87,
+  IOC: 4.42,
+  ROV: 11.42,
+  ISF: 3.83,
+  PRODUTIVIDADE: 86.75,
+  "EFICIÊNCIA": 100,
+  "UTILIZAÇÃO": 86.75,
+  TMS: 19
+};
+
+    function baixarResultadosFiltrados(){
+  if (!ultimoResultadoDetalhado || !ultimoResultadoDetalhado.length){
     alert("Não há resultados para exportar.");
     return;
   }
 
-  const ws = XLSX.utils.json_to_sheet(ultimoResultadoDetalhado);
-  const wb = XLSX.utils.book_new();
+  const dados = ultimoResultadoDetalhado.map(item => ({
+    "Matrícula": item.matricula || "",
+    "Nome": item.nome || "",
+    "Mês": item.mes || "",
+    "% IPEO": Number(item.ipeo || 0),
+    "% DI": Number(item.di || 0),
+    "% ROE": Number(item.roe || 0),
+    "% RNT": Number(item.rnt || 0),
+    "% IOC": Number(item.ioc || 0),
+    "% ISF": Number(item.isf || 0),
+    "% ROV": Number(item.rov || 0),
+    "% Produtividade": Number(item.produtividade || 0),
+    "% Eficiência": Number(item.eficiencia || 0),
+    "% Utilização": Number(item.utilizacao || 0),
+    "TMS": Number(item.tms || 0)
+  }));
 
+  const ws = XLSX.utils.json_to_sheet(dados);
+
+  const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Resultados");
-  XLSX.writeFile(wb, "resultados_ipeo.xlsx");
+
+  let nomeArquivo = "resultados_ipeo";
+
+  if (usuarioLogado?.isAdmin){
+    const matricula = document.getElementById("filtroMatricula")?.value.trim();
+    const nome = document.getElementById("filtroNome")?.value.trim();
+    const mes = document.getElementById("filtroMes")?.value.trim();
+
+    if (matricula) nomeArquivo += `_matricula_${matricula}`;
+    if (nome) nomeArquivo += `_nome_${nome.replace(/\s+/g, "_")}`;
+    if (mes) nomeArquivo += `_mes_${mes}`;
+  } else {
+    nomeArquivo += `_${usuarioLogado?.matricula || "usuario"}`;
+  }
+
+  nomeArquivo += ".xlsx";
+
+  XLSX.writeFile(wb, nomeArquivo);
+}
+    function aplicarOrdenacao(lista){
+ const tipo = document.getElementById('filtroOrdenacao')?.value || '';
+ const arr = [...lista];
+ if(tipo === 'IPEO') arr.sort((a,b)=>Number(b.ipeo||0)-Number(a.ipeo||0));
+ if(tipo === 'MIP') arr.sort((a,b)=>Number(b.produtividade||0)-Number(a.produtividade||0));
+ return arr;
 }
 
-async function importarExcelIPEO() {
-  const file = document.getElementById("arquivoExcel").files[0];
+async function carregarDados(){
+ if(!usuarioLogado) return;
+ const res = await fetch(API_BASE + '/ipeo-dashboard', { headers: authHeaders() });
+ const data = await res.json();
+ ultimoResultadoDetalhado = aplicarOrdenacao(data.resultados || []);
+ renderTabela(ultimoResultadoDetalhado);
+ renderCards(data.kpis || []);
+}
 
-  if (!file) {
-    alert("Selecione um arquivo.");
+function renderTabela(lista){
+ const el = document.getElementById('tbodyResultados');
+ el.innerHTML = lista.map(item => `
+ <tr>
+  <td>${item.matricula||'-'}</td>
+  <td>${item.nome||'-'}</td>
+  <td>${item.prestador||'-'}</td>
+  <td>${item.mes||'-'}</td>
+  <td>${formatPercent(item.ipeo)}</td>
+  <td>${formatPercent(item.di)}</td>
+  <td>${formatPercent(item.roe)}</td>
+  <td>${formatPercent(item.rnt)}</td>
+  <td>${formatPercent(item.ioc)}</td>
+  <td>${formatPercent(item.isf)}</td>
+  <td>${formatPercent(item.rov)}</td>
+  <td>${formatPercent(item.produtividade)}</td>
+  <td>${formatPercent(item.eficiencia)}</td>
+  <td>${formatPercent(item.utilizacao)}</td>
+  <td>${formatNumero(item.tms)}</td>
+ </tr>`).join('');
+}
+
+    function abrirAjuda(){
+  document.getElementById("modalAjuda").classList.add("show");
+}
+
+function fecharAjuda(event){
+  if (event && event.target && event.target.id !== "modalAjuda") return;
+  document.getElementById("modalAjuda").classList.remove("show");
+}
+
+    function normalizarPercentual(v){
+  let n = Number(v || 0);
+  if (!Number.isFinite(n)) return 0;
+  return n;
+}
+    function abrirAjuda(secao = "mip"){
+  document.getElementById("modalAjuda").classList.add("show");
+  trocarAjuda(secao);
+}
+
+function fecharAjuda(event){
+  if (event && event.target && event.target.id !== "modalAjuda") return;
+  document.getElementById("modalAjuda").classList.remove("show");
+}
+
+function trocarAjuda(secao){
+  const tabMIP = document.getElementById("tabMIP");
+  const tabIPEO = document.getElementById("tabIPEO");
+  const ajudaMIP = document.getElementById("ajudaMIP");
+  const ajudaIPEO = document.getElementById("ajudaIPEO");
+
+  tabMIP.classList.remove("active");
+  tabIPEO.classList.remove("active");
+  ajudaMIP.classList.remove("active");
+  ajudaIPEO.classList.remove("active");
+
+  if (secao === "ipeo"){
+    tabIPEO.classList.add("active");
+    ajudaIPEO.classList.add("active");
+  } else {
+    tabMIP.classList.add("active");
+    ajudaMIP.classList.add("active");
+  }
+}
+
+    function setLoginMsg(texto, tipo = "error"){
+      const el = document.getElementById("loginMsg");
+      el.className = "msg " + tipo;
+      el.textContent = texto;
+    }
+
+    function limparLoginMsg(){
+      const el = document.getElementById("loginMsg");
+      el.className = "msg";
+      el.textContent = "";
+    }
+
+    function getToken(){
+      return localStorage.getItem("ipeo_token") || "";
+    }
+
+    function setToken(token){
+      localStorage.setItem("ipeo_token", token);
+    }
+
+    function clearToken(){
+      localStorage.removeItem("ipeo_token");
+    }
+
+    function authHeaders(){
+      return {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + getToken()
+      };
+    }
+
+    function setImportMsg(texto, tipo = "success"){
+      const el = document.getElementById("importacaoMsg");
+      el.innerHTML = `<div class="msg ${tipo}" style="display:block;">${texto}</div>`;
+    }
+
+    function toggleMobileMenu(){
+      const sidebar = document.querySelector(".sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      sidebar.classList.toggle("open");
+      overlay.classList.toggle("show");
+    }
+
+    function fecharMobileMenu(){
+      const sidebar = document.querySelector(".sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      sidebar.classList.remove("open");
+      overlay.classList.remove("show");
+    }
+
+    function showPage(page, btn = null){
+      document.getElementById("dashboardPage").classList.toggle("hidden", page !== "dashboard");
+      document.getElementById("resultadosPage").classList.toggle("hidden", page !== "resultados");
+      document.getElementById("importacaoPage").classList.toggle("hidden", page !== "importacao");
+
+      document.getElementById("pageTitle").textContent =
+        page === "dashboard" ? "Dashboard" :
+        page === "resultados" ? "Resultados" :
+        "Importação";
+
+      document.getElementById("pageSubtitle").textContent =
+        page === "dashboard"
+          ? "Acompanhe seus indicadores de forma rápida."
+          : page === "resultados"
+          ? "Detalhamento dos indicadores por mês."
+          : "Importe o Excel com os indicadores.";
+
+      document.querySelectorAll(".menu button").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+
+      fecharMobileMenu();
+    }
+
+    function limparFiltros(){
+      const fMat = document.getElementById("filtroMatricula");
+      const fMes = document.getElementById("filtroMes");
+      const fNome = document.getElementById("filtroNome");
+      if (fMat) fMat.value = "";
+      if (fMes) fMes.value = "";
+      if (fNome) fNome.value = "";
+      carregarDados();
+    }
+
+    async function login(){
+  limparLoginMsg();
+
+  const matricula = document.getElementById("matricula").value.trim();
+  const senha = document.getElementById("senha").value.trim();
+
+  if (!matricula || !senha){
+    setLoginMsg("Informe matrícula e senha.");
     return;
   }
 
-  try {
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: "array" });
+  try{
+    const payload = {
+      matricula: matricula,
+      senha: senha
+    };
 
-    const aba = workbook.SheetNames.includes("BASE RELATÓRIO")
-      ? "BASE RELATÓRIO"
-      : workbook.SheetNames[0];
+    console.log("payload login:", payload);
 
-    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[aba], { defval: "" });
-
-    const res = await fetch(`${API_BASE}/importar-ipeo`, {
+    const res = await fetch(API_BASE + "/login", {
       method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify(rows)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    console.log("status login:", res.status);
+    console.log("resposta login:", data);
+
+    if (!res.ok || (!data.ok && !data.sucesso)) {
+      throw new Error(data.error || data.erro || "Falha no login");
+    }
+
+    setToken(data.token);
+    await validarSessao();
+  } catch (err) {
+    setLoginMsg(err.message || "Não foi possível entrar.");
+  }
+}
+
+    
+    async function validarSessao(){
+  const token = getToken();
+
+  if (!token) {
+    clearToken();
+    usuarioLogado = null;
+    document.getElementById("loginScreen").classList.remove("hidden");
+    document.getElementById("appScreen").classList.add("hidden");
+    return;
+  }
+
+  try{
+    const res = await fetch(API_BASE + "/me", {
+      headers: authHeaders()
     });
 
     const data = await res.json();
 
     if (!res.ok || !data.ok) {
-      throw new Error(data.error || "Erro ao importar");
+      throw new Error(data.error || "Sessão inválida");
     }
 
-    alert(`Importação concluída: ${data.processados} linhas.`);
+    usuarioLogado = data.usuario;
 
-    cacheResultados = null;
-    carregarDados(true);
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("appScreen").classList.remove("hidden");
 
+    document.getElementById("sidebarUserName").textContent = usuarioLogado.nome || "Usuário";
+    document.getElementById("sidebarUserInfo").textContent =
+      `${usuarioLogado.matricula} • ${usuarioLogado.isAdmin ? "Administrador" : "Colaborador"}`;
+
+    document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
+    document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
+
+    await carregarDados();
   } catch (err) {
-    alert(err.message);
+    clearToken();
+    usuarioLogado = null;
+    document.getElementById("loginScreen").classList.remove("hidden");
+    document.getElementById("appScreen").classList.add("hidden");
   }
 }
+    function logout(){
+      clearToken();
+      usuarioLogado = null;
+      ultimoResultadoDetalhado = [];
+      document.getElementById("loginScreen").classList.remove("hidden");
+      document.getElementById("appScreen").classList.add("hidden");
+      document.getElementById("senha").value = "";
+      limparLoginMsg();
+    }
 
-document.getElementById("filtroOrdenacao")?.addEventListener("change", () => {
-  renderTabela(aplicarOrdenacao(ultimoResultadoDetalhado));
-});
+    async function carregarDados(){
+      if (!usuarioLogado) return;
 
-document.getElementById("senha")?.addEventListener("keydown", e => {
-  if (e.key === "Enter") login();
-});
+      const cardsMIP = document.getElementById("cardsMIP");
+      const cardsIPEO = document.getElementById("cardsIPEO");
+      const tbody = document.getElementById("tbodyResultados");
+      
 
-if (getToken()) {
+      cardsMIP.classList.add("loading");
+      cardsIPEO.classList.add("loading");
+
+
+      
+      tbody.innerHTML = `<tr><td colspan="14" class="empty">Carregando...</td></tr>`;
+
+      try{
+        const params = new URLSearchParams();
+
+        if (usuarioLogado.isAdmin){
+          const matricula = document.getElementById("filtroMatricula").value.trim();
+          const mes = document.getElementById("filtroMes").value.trim();
+          const nome = document.getElementById("filtroNome")?.value.trim();
+
+          if (matricula) params.set("matricula", matricula);
+          if (mes) params.set("mes", mes);
+          if (nome) params.set("nome", nome);
+        }
+
+        const url = API_BASE + "/ipeo-dashboard" + (params.toString() ? `?${params.toString()}` : "");
+        const res = await fetch(url, { headers: authHeaders() });
+        const data = await res.json();
+
+        if (!res.ok || !data.ok){
+          throw new Error(data.error || "Erro ao carregar indicadores");
+        }
+
+        ultimoResultadoDetalhado = data.resultados || [];
+        renderCards(data.kpis || []);
+        renderTabela(data.resultados || []);
+      } catch(err){
+        ultimoResultadoDetalhado = [];
+        renderCards([]);
+        tbody.innerHTML = `<tr><td colspan="14" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
+      } finally{
+        cardsMIP.classList.remove("loading");
+        cardsIPEO.classList.remove("loading");
+      }
+    }
+
+    function formatPercent(v){
+      const n = Number(v || 0);
+      return `${n.toFixed(2).replace(".", ",")}%`;
+    }
+    function formatNumero(v){
+  const n = Number(v || 0);
+  return n.toFixed(2).replace(".", ",");
+}
+
+    function renderCards(lista){
+  const elMIP = document.getElementById("cardsMIP");
+  const elIPEO = document.getElementById("cardsIPEO");
+
+  const grupoMIP = ["PRODUTIVIDADE", "EFICIÊNCIA", "UTILIZAÇÃO", "TMS"];
+  const grupoIPEO = ["IPEO", "DI", "ROV", "ROE", "RNT", "ISF", "IOC"];
+
+  if (!lista.length){
+    const vazio = `
+      <div class="panel" style="grid-column:1/-1;">
+        <div class="empty">Nenhum indicador encontrado.</div>
+      </div>
+    `;
+    elMIP.innerHTML = vazio;
+    elIPEO.innerHTML = vazio;
+    return;
+  }
+
+  function criarCard(item){
+    const nome = String(item.nome || "").toUpperCase().trim();
+    const real = nome === "TMS"
+      ? Number(item.real || 0)
+      : normalizarPercentual(item.real || 0);
+
+    const meta = Number(METAS[nome] || 0);
+
+    const indicadoresMaiorMelhor = new Set([
+      "IPEO",
+      "PRODUTIVIDADE",
+      "EFICIÊNCIA",
+      "UTILIZAÇÃO"
+    ]);
+
+    const maiorMelhor = indicadoresMaiorMelhor.has(nome);
+    const atingiu = maiorMelhor ? real >= meta : real <= meta;
+
+    let pctBarra = 0;
+    if (meta > 0) {
+      if (maiorMelhor) {
+        pctBarra = Math.min((real / meta) * 100, 100);
+      } else {
+        pctBarra = Math.min((meta / Math.max(real, 0.0001)) * 100, 100);
+      }
+    }
+
+    const icones = {
+      IPEO: "bi-speedometer2",
+      DI: "bi-graph-up-arrow",
+      ROE: "bi-bullseye",
+      RNT: "bi-bar-chart-line",
+      IOC: "bi-award",
+      ISF: "bi-lightning-charge",
+      ROV: "bi-stars",
+      PRODUTIVIDADE: "bi-bar-chart-steps",
+      "EFICIÊNCIA": "bi-activity",
+      "UTILIZAÇÃO": "bi-pie-chart",
+      TMS: "bi-clock-history"
+    };
+
+    const icon = icones[nome] || "bi-bar-chart";
+    const cardClass = atingiu ? "success" : "danger";
+    const statusClass = atingiu ? "meta-ok" : "meta-bad";
+
+    const valorFormatado = nome === "TMS" ? formatNumero(real) : formatPercent(real);
+    const metaFormatada = nome === "TMS" ? formatNumero(meta) : formatPercent(meta);
+
+    return `
+      <div class="card ${cardClass}" onclick="abrirGraficoIndicador('${nome}')">
+        <div class="card-top">
+          <div class="card-title">${nome}</div>
+          <div class="card-icon"><i class="bi ${icon}"></i></div>
+        </div>
+
+        <div class="card-value">${valorFormatado}</div>
+
+        <div class="meta-row">
+          <span>Meta</span>
+          <span class="${statusClass}">${metaFormatada}</span>
+        </div>
+
+        <div class="progress">
+          <div style="width:${Math.max(0, pctBarra)}%"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  elMIP.innerHTML = lista
+    .filter(item => grupoMIP.includes(String(item.nome || "").toUpperCase().trim()))
+    .map(criarCard)
+    .join("");
+
+  elIPEO.innerHTML = lista
+    .filter(item => grupoIPEO.includes(String(item.nome || "").toUpperCase().trim()))
+    .map(criarCard)
+    .join("");
+}
+    function renderTabela(lista){
+      const el = document.getElementById("tbodyResultados");
+
+      if (!lista.length){
+        el.innerHTML = `<tr><td colspan="14" class="empty">Nenhum resultado encontrado.</td></tr>`;
+        return;
+      }
+
+      el.innerHTML = lista.map(item => `
+        <tr>
+          <td>${item.matricula || "-"}</td>
+          <td>${item.nome || "-"}</td>
+          <td>${item.mes || "-"}</td>
+          <td>${formatPercent(normalizarPercentual(item.ipeo))}</td>
+          <td>${formatPercent(normalizarPercentual(item.di))}</td>
+          <td>${formatPercent(normalizarPercentual(item.roe))}</td>
+          <td>${formatPercent(normalizarPercentual(item.rnt))}</td>
+          <td>${formatPercent(normalizarPercentual(item.ioc))}</td>
+          <td>${formatPercent(normalizarPercentual(item.isf))}</td>
+          <td>${formatPercent(normalizarPercentual(item.rov))}</td>
+          <td>${formatPercent(normalizarPercentual(item.produtividade))}</td>
+          <td>${formatPercent(normalizarPercentual(item.eficiencia))}</td>
+          <td>${formatPercent(normalizarPercentual(item.utilizacao))}</td>
+         <td>${formatNumero(item.tms)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function abrirGraficoIndicador(indicador){
+  const modal = document.getElementById("chartModal");
+  const title = document.getElementById("chartTitle");
+
+  const mapaIndicadores = {
+    "IPEO": "ipeo",
+    "DI": "di",
+    "ROE": "roe",
+    "RNT": "rnt",
+    "IOC": "ioc",
+    "ISF": "isf",
+    "ROV": "rov",
+    "PRODUTIVIDADE": "produtividade",
+    "EFICIÊNCIA": "eficiencia",
+    "UTILIZAÇÃO": "utilizacao",
+    "TMS": "tms"
+  };
+
+  const chave = mapaIndicadores[indicador] || indicador.toLowerCase();
+
+  const mesesFixos = ["01","02","03","04","05","06","07","08","09","10","11","12"];
+  const mesesLabel = {
+    "01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
+    "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"
+  };
+
+  const grupos = {};
+  for (const mes of mesesFixos) grupos[mes] = [];
+
+  for (const row of ultimoResultadoDetalhado) {
+    const mes = String(row.mes || "").padStart(2, "0");
+    const valor = indicador === "TMS"
+      ? Number(row[chave] || 0)
+      : normalizarPercentual(row[chave]);
+
+    if (grupos[mes]) {
+      grupos[mes].push(valor);
+    }
+  }
+
+  const labels = mesesFixos.map(m => mesesLabel[m]);
+  const valores = mesesFixos.map(m => {
+    const arr = grupos[m];
+    if (!arr || !arr.length) return null;
+    const media = arr.reduce((a,b) => a + b, 0) / arr.length;
+    return Number(media.toFixed(2));
+  });
+
+  title.textContent = `Evolução do ${indicador} ao longo do ano`;
+
+  if (indicadorChart) {
+    indicadorChart.destroy();
+    indicadorChart = null;
+  }
+
+  const ctx = document.getElementById("indicatorChart").getContext("2d");
+
+  indicadorChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: indicador,
+          data: valores,
+          tension: 0.3,
+          fill: false,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 5,
+          spanGaps: true,
+          borderColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
+          backgroundColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
+          datalabels: {
+            display: true,
+            align: "top",
+            anchor: "end",
+            offset: 4,
+            clamp: true,
+            formatter: (value) => {
+              if (value == null) return "";
+              return indicador === "TMS"
+                ? value.toFixed(1).replace(".", ",")
+                : `${value.toFixed(1).replace(".", ",")}%`;
+            },
+            font: {
+              size: 10,
+              weight: "600"
+            }
+          }
+        },
+        {
+          label: "Meta",
+          data: mesesFixos.map(() => Number(METAS[indicador] || 0)),
+          tension: 0,
+          fill: false,
+          borderDash: [6, 6],
+          borderWidth: 2,
+          pointRadius: 0,
+          borderColor: "#ff6384",
+          backgroundColor: "#ff6384",
+          datalabels: {
+            display: false
+          }
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true
+        },
+        datalabels: {
+          color: "#374151"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context){
+              const valor = Number(context.raw || 0).toFixed(2).replace(".", ",");
+              return indicador === "TMS"
+                ? `${context.dataset.label}: ${valor}`
+                : `${context.dataset.label}: ${valor}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value){
+              return indicador === "TMS"
+                ? Number(value).toFixed(0).replace(".", ",")
+                : Number(value).toFixed(0).replace(".", ",") + "%";
+            }
+          }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+
+  modal.classList.add("show");
+}
+    function fecharGrafico(event){
+      if (event && event.target && event.target.id !== "chartModal") return;
+      document.getElementById("chartModal").classList.remove("show");
+    }
+
+    async function importarExcelIPEO() {
+      const input = document.getElementById("arquivoExcel");
+      const file = input.files[0];
+
+      if (!file) {
+        setImportMsg("Selecione um arquivo Excel.", "error");
+        return;
+      }
+
+      try {
+        setImportMsg("Lendo arquivo...", "success");
+
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        let rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        rows = rows.filter(r =>
+          String(r["MATRÍCULA"] || r["MATRICULA"] || "").trim() &&
+          String(r["MÊS"] || r["MES"] || "").trim()
+        );
+
+        if (!rows.length) {
+          setImportMsg("Nenhuma linha válida encontrada.", "error");
+          return;
+        }
+
+        const res = await fetch(API_BASE + "/importar-ipeo", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(rows)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Erro ao importar");
+        }
+
+        setImportMsg(`Importação concluída. Processados: ${data.processados}`, "success");
+        await carregarDados();
+
+      } catch (err) {
+        setImportMsg(err.message || "Erro ao importar arquivo.", "error");
+      }
+    }
+
+    const tokenInicial = getToken();
+if (tokenInicial) {
   validarSessao();
 }
-</script>
+  </script>
 </body>
 </html>
