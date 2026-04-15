@@ -1006,6 +1006,7 @@
       </div>
 
       
+
 <section id="adminFilters" class="panel compact hidden">
   <div class="panel-title panel-title-row">
     <div class="panel-title-left">
@@ -1018,8 +1019,10 @@
     </button>
   </div>
 
+  <!-- ✅ ESTE CARA AQUI é obrigatório -->
+  <div id="adminFiltersBody" class="filters-body">
+    <div class="filters compact">
 
-        <div class="filters compact">
           <div>
             <label for="filtroMatricula">Matrícula</label>
             <input id="filtroMatricula" class="input input-sm" type="text" placeholder="Ex.: 3080117" />
@@ -1049,7 +1052,7 @@
 
           <div>
             <label for="filtroMes">Mês</label>
-            <select id="filtroMes" class="input">
+            <select id="filtroMes" class="input input-sm">
               <option value="">Todos</option>
               <option value="01">01</option>
               <option value="02">02</option>
@@ -1066,13 +1069,15 @@
             </select>
           </div>
 
-          <div style="display:flex;align-items:flex-end;">
-            <button class="btn btn-primary btn-full" onclick="carregarDados()">Aplicar</button>
-          </div>
+          
+<button class="btn btn-primary btn-sm btn-full" onclick="carregarDados()">
+  <i class="bi bi-funnel"></i> Aplicar
+</button>
 
-          <div style="display:flex;align-items:flex-end;">
-            <button class="btn btn-soft btn-full" onclick="limparFiltros()">Limpar</button>
-          </div>
+<button class="btn btn-soft btn-sm btn-full" onclick="limparFiltros()">
+  <i class="bi bi-x-circle"></i> Limpar
+</button>
+
         </div>
       </section>
 
@@ -2037,16 +2042,12 @@ function aplicarEstadoFiltrosSalvo(){
       setImportMsg(err.message || "Erro ao importar arquivo.", "error");
     }
   }
-      document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
-document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
 
   // Auto-login
   const tokenInicial = getToken();
   if (tokenInicial) validarSessao();
 
-if (usuarioLogado.isAdmin) {
-  aplicarEstadoFiltrosSalvo();
-}
+
    
 </script>
 </body>
