@@ -885,7 +885,38 @@
   .filters.compact{
     grid-template-columns: 1fr;
   }
-}  </style>
+}/* ===== Header do painel com botão de toggle ===== */
+.panel-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+}
+
+.panel-title-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* ===== Corpo recolhível dos filtros ===== */
+.filters-body{
+  overflow:hidden;
+  transition: max-height .25s ease, opacity .2s ease, transform .2s ease;
+  max-height: 800px; /* alto o suficiente para conter todos os filtros */
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.filters-body.collapsed{
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+  </style>
 </head>
 <body>
 
@@ -974,10 +1005,19 @@
         </div>
       </div>
 
-      <section id="adminFilters" class="panel compact hidden">
-        <div class="panel-title">
-          <i class="bi bi-shield-lock"></i> Filtros do administrador
-        </div>
+      
+<section id="adminFilters" class="panel compact hidden">
+  <div class="panel-title panel-title-row">
+    <div class="panel-title-left">
+      <i class="bi bi-shield-lock"></i> Filtros do administrador
+    </div>
+
+    <button id="btnToggleFiltros" class="btn btn-soft btn-sm" type="button" onclick="toggleFiltros()">
+      <i id="iconToggleFiltros" class="bi bi-chevron-up"></i>
+      <span id="textToggleFiltros">Esconder filtros</span>
+    </button>
+  </div>
+
 
         <div class="filters compact">
           <div>
@@ -1304,6 +1344,36 @@
     "UTILIZAÇÃO": 86.75,
     TMS: 19
   };
+
+   function setToggleUI(collapsed){
+  const body = document.getElementById("adminFiltersBody");
+  const icon = document.getElementById("iconToggleFiltros");
+  const text = document.getElementById("textToggleFiltros");
+
+  if (!body || !icon || !text) return;
+
+  body.classList.toggle("collapsed", collapsed);
+
+  icon.className = collapsed ? "bi bi-chevron-down" : "bi bi-chevron-up";
+  text.textContent = collapsed ? "Mostrar filtros" : "Esconder filtros";
+}
+
+function toggleFiltros(){
+  const body = document.getElementById("adminFiltersBody");
+  if (!body) return;
+
+  const collapsed = !body.classList.contains("collapsed");
+  setToggleUI(collapsed);
+
+  // salva preferência
+  localStorage.setItem("ipeo_admin_filters_collapsed", collapsed ? "1" : "0");
+}
+
+function aplicarEstadoFiltrosSalvo(){
+  const saved = localStorage.getItem("ipeo_admin_filters_collapsed");
+  const collapsed = saved === "1";
+  setToggleUI(collapsed);
+}
 
   // =========================
   // Utilitários
@@ -1965,6 +2035,14 @@
   // Auto-login
   const tokenInicial = getToken();
   if (tokenInicial) validarSessao();
+   
+document.getElementById("adminFilters").classList.toggle("hidden", !usuarioLogado.isAdmin);
+document.getElementById("menuImportar").classList.toggle("hidden", !usuarioLogado.isAdmin);
+
+if (usuarioLogado.isAdmin) {
+  aplicarEstadoFiltrosSalvo();
+}
+
 </script>
 </body>
 </html>
