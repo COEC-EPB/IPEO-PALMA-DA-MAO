@@ -1926,51 +1926,41 @@ function aplicarEstadoFiltrosSalvo(){
     XLSX.writeFile(wb, nomeArquivo);
   }
 
-   function calcularEscalaY(valores, meta, indicador) {
+  function calcularEscalaY(valores, meta, indicador) {
   const nums = (valores || [])
     .filter(v => v !== null && v !== undefined)
     .map(Number)
     .filter(Number.isFinite);
 
   const m = Number(meta);
-  if (Number.isFinite(m) && m !== 0) nums.push(m);
+  if (Number.isFinite(m)) nums.push(m);
 
-  // fallback se não tiver dados
   if (!nums.length) {
     return indicador === "TMS"
       ? { min: 0, max: 30, step: 2 }
-      : { min: 70, max: 100, step: 5 };
+      : { min: 70, max: 105, step: 5 };
   }
+
+  const isTms = indicador === "TMS";
 
   const minV = Math.min(...nums);
   const maxV = Math.max(...nums);
 
-  // Configurações por tipo
-  const isTms = indicador === "TMS";
+  const step = isTms ? 2 : 2;
 
-  // Degraus (step) e folga (padding)
-  const step = isTms ? 2 : 2;        // % em 2 p.p. (troque p/ 5 se quiser mais “largo”)
-  const padding = isTms ? 2 : 3;     // folga pra não encostar no topo
+  // Mais espaço no topo para não cortar os labels
+  const paddingBottom = isTms ? 2 : 3;
+  const paddingTop = isTms ? 4 : 8;
 
-  // Arredonda para degraus "certinhos"
-  let min = Math.floor((minV - padding) / step) * step;
-  let max = Math.ceil((maxV + padding) / step) * step;
+  let min = Math.floor((minV - paddingBottom) / step) * step;
+  let max = Math.ceil((maxV + paddingTop) / step) * step;
 
-  // Proteções para %: nunca passar de 0-100 em geral
   if (!isTms) {
     min = Math.max(0, min);
-    max = Math.min(100, max);
 
-    // se ficou muito apertado, abre um pouco
-    if (max - min < 6) {
-      min = Math.max(0, min - step * 2);
-      max = Math.min(100, max + step * 2);
-    }
-  } else {
-    // para TMS não deixa range pequeno demais
-    if (max - min < 6) {
-      min = Math.max(0, min - step * 2);
-      max = max + step * 2;
+    // permite passar de 100 quando necessário
+    if (max <= 100 && maxV >= 97) {
+      max = 104;
     }
   }
 
@@ -2064,6 +2054,7 @@ datasets: [
       anchor: "end",
       offset: 4,
       clamp: true,
+      clip: false,
       formatter: (value) => {
         if (value == null) return "";
         return indicador === "TMS"
