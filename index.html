@@ -1402,9 +1402,6 @@ async function carregarOpcoesFiltros() {
   const polo = selPolo?.value?.trim();
   if (polo) params.set("polo", polo);
 
-  const gestor = selGestor?.value?.trim();
-  if (gestor) params.set("gestor", gestor);
-
   const url = API_BASE + "/ipeo-filtros" + (params.toString() ? `?${params.toString()}` : "");
   const res = await fetch(url, { headers: authHeaders() });
   const data = await res.json();
@@ -1424,21 +1421,13 @@ async function carregarOpcoesFiltros() {
 // Quando muda Regional, recarrega Polos/Prestadores
 async function onFiltroRegionalChange() {
   const selPolo = document.getElementById("filtroPolo");
-  const selGestor = document.getElementById("filtroGestor");
-
-  if (selPolo) selPolo.value = "";
-  if (selGestor) selGestor.value = "";
-
+  if (selPolo) selPolo.value = ""; // reset polo ao trocar regional
   await carregarOpcoesFiltros();
   carregarDados();
 }
 
 // Quando muda Polo, pode refinar prestadores também
 async function onFiltroPoloChange() {
-  const selGestor = document.getElementById("filtroGestor");
-
-  if (selGestor) selGestor.value = "";
-
   await carregarOpcoesFiltros();
   carregarDados();
 }
@@ -1514,13 +1503,9 @@ function aplicarEstadoFiltrosSalvo(){
   }
 
   function formatPercent(v) {
-  let n = Number(v || 0);
-
-  // se for decimal, converte
-  if (n <= 1) n = n * 100;
-
-  return `${n.toFixed(2).replace(".", ",")}%`;
-}
+    const n = Number(v || 0);
+    return `${n.toFixed(2).replace(".", ",")}%`;
+  }
 
   function formatNumero(v) {
     const n = Number(v || 0);
@@ -2029,10 +2014,9 @@ function aplicarEstadoFiltrosSalvo(){
     for (const row of ultimoResultadoDetalhado) {
       const mes = String(row.mes || "").padStart(2, "0");
       const valor = indicador === "TMS"
-      ? Number(row[chave] || 0)
-      : (Number(row[chave] || 0) <= 1
-          ? Number(row[chave] || 0) * 100
-          : Number(row[chave] || 0));
+        ? Number(row[chave] || 0)
+        : normalizarPercentual(row[chave]);
+
       if (grupos[mes]) grupos[mes].push(valor);
     }
 
