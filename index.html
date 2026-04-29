@@ -1040,7 +1040,12 @@
     <option value="">Todas</option>
   </select>
 </div>
-
+<div>
+  <label for="filtroGestor">Gestor</label>
+  <select id="filtroGestor" class="input input-sm" onchange="carregarDados()">
+    <option value="">Todos</option>
+  </select>
+</div>
 
 
 <div>
@@ -1382,6 +1387,7 @@ async function carregarOpcoesFiltros() {
   const selPolo = document.getElementById("filtroPolo");
   const selPrest = document.getElementById("filtroPrestador");
   const selMes = document.getElementById("filtroMes");
+  const selGestor = document.getElementById("filtroGestor");
 
   // Monta params para dependência (regional -> polos)
   const params = new URLSearchParams();
@@ -1409,6 +1415,7 @@ async function carregarOpcoesFiltros() {
   setOptions(selRegional, data.regionais || [], "Todas");
   setOptions(selPolo, data.polos || [], "Todos");
   setOptions(selPrest, data.prestadores || [], "Todos");
+  setOptions(selGestor, data.gestores || [], "Todos");
 }
 
 // Quando muda Regional, recarrega Polos/Prestadores
@@ -1568,7 +1575,8 @@ function aplicarEstadoFiltrosSalvo(){
     const fRegional = document.getElementById("filtroRegional");
     const fPolo = document.getElementById("filtroPolo");
     const fPrest = document.getElementById("filtroPrestador");
-
+    const fGestor = document.getElementById("filtroGestor");
+    
 
     if (fPrest) fPrest.value = "";
     if (fMat) fMat.value = "";
@@ -1576,6 +1584,7 @@ function aplicarEstadoFiltrosSalvo(){
     if (fNome) fNome.value = "";
     if (fRegional) fRegional.value = "";
     if (fPolo) fPolo.value = "";
+    if (fGestor) fGestor.value = "";
 
     carregarDados();
   }
@@ -1725,17 +1734,19 @@ function aplicarEstadoFiltrosSalvo(){
       if (usuarioLogado.isAdmin) {
         const matricula = document.getElementById("filtroMatricula")?.value.trim();
         const mes = document.getElementById("filtroMes")?.value.trim();
+        const polo = document.getElementById("filtroPolo")?.value.trim();
         const nome = document.getElementById("filtroNome")?.value.trim();
-        const regional = document.getElementById("filtroRegional")?.value.trim();
-        const polo = document.getElementById("filtroPolo")?.value.trim();        
+        const regional = document.getElementById("filtroRegional")?.value.trim();    
         const prestador = document.getElementById("filtroPrestador")?.value.trim();
+        const gestor = document.getElementById("filtroGestor")?.value.trim();
 
         if (matricula) params.set("matricula", matricula);
         if (mes) params.set("mes", mes);
+        if (polo) params.set("polo", polo);
         if (nome) params.set("nome", nome);
         if (regional) params.set("regional", regional);
-        if (polo) params.set("polo", polo);
         if (prestador) params.set("prestador", prestador);
+        if (gestor) params.set("gestor", gestor);
       }
 
       const url = API_BASE + "/ipeo-dashboard" + (params.toString() ? `?${params.toString()}` : "");
