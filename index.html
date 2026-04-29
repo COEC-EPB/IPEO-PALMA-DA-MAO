@@ -2029,9 +2029,10 @@ function aplicarEstadoFiltrosSalvo(){
     for (const row of ultimoResultadoDetalhado) {
       const mes = String(row.mes || "").padStart(2, "0");
       const valor = indicador === "TMS"
-        ? Number(row[chave] || 0)
-        : normalizarPercentual(row[chave]);
-
+      ? Number(row[chave] || 0)
+      : (Number(row[chave] || 0) <= 1
+          ? Number(row[chave] || 0) * 100
+          : Number(row[chave] || 0));
       if (grupos[mes]) grupos[mes].push(valor);
     }
 
