@@ -1514,9 +1514,13 @@ function aplicarEstadoFiltrosSalvo(){
   }
 
   function formatPercent(v) {
-    const n = Number(v || 0);
-    return `${n.toFixed(2).replace(".", ",")}%`;
-  }
+  let n = Number(v || 0);
+
+  // se for decimal, converte
+  if (n <= 1) n = n * 100;
+
+  return `${n.toFixed(2).replace(".", ",")}%`;
+}
 
   function formatNumero(v) {
     const n = Number(v || 0);
