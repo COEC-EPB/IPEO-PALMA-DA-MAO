@@ -1388,6 +1388,7 @@ async function carregarOpcoesFiltros() {
   const selPrest = document.getElementById("filtroPrestador");
   const selMes = document.getElementById("filtroMes");
   const selGestor = document.getElementById("filtroGestor");
+  const polo = selPolo?.value?.trim();
 
   // Monta params para dependência (regional -> polos)
   const params = new URLSearchParams();
@@ -1401,6 +1402,9 @@ async function carregarOpcoesFiltros() {
 
   const polo = selPolo?.value?.trim();
   if (polo) params.set("polo", polo);
+
+  const gestor = selGestor?.value?.trim();
+  if (gestor) params.set("gestor", gestor);
 
   const url = API_BASE + "/ipeo-filtros" + (params.toString() ? `?${params.toString()}` : "");
   const res = await fetch(url, { headers: authHeaders() });
@@ -1421,13 +1425,21 @@ async function carregarOpcoesFiltros() {
 // Quando muda Regional, recarrega Polos/Prestadores
 async function onFiltroRegionalChange() {
   const selPolo = document.getElementById("filtroPolo");
-  if (selPolo) selPolo.value = ""; // reset polo ao trocar regional
+  const selGestor = document.getElementById("filtroGestor");
+
+  if (selPolo) selPolo.value = "";
+  if (selGestor) selGestor.value = "";
+
   await carregarOpcoesFiltros();
   carregarDados();
 }
 
 // Quando muda Polo, pode refinar prestadores também
 async function onFiltroPoloChange() {
+  const selGestor = document.getElementById("filtroGestor");
+
+  if (selGestor) selGestor.value = "";
+
   await carregarOpcoesFiltros();
   carregarDados();
 }
