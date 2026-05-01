@@ -1362,17 +1362,26 @@
     TMS: 19
   };
 
-   function setOptions(selectEl, values, placeholder = "Todos") {
+  function setOptions(selectEl, values, placeholder = "Todos") {
   if (!selectEl) return;
 
   const prev = selectEl.value || "";
+
+  // 🔥 remove vazios e duplicados
+  const valoresLimpos = [...new Set(
+    (values || [])
+      .map(v => String(v).trim())
+      .filter(v => v && v.toLowerCase() !== "todos")
+  )];
+
   const opts = [`<option value="">${placeholder}</option>`]
-    .concat((values || []).map(v => `<option value="${String(v).replaceAll('"','&quot;')}">${v}</option>`));
+    .concat(valoresLimpos.map(v => `<option value="${v}">${v}</option>`));
 
   selectEl.innerHTML = opts.join("");
 
-  // tenta manter seleção anterior se ainda existir
-  if (prev && (values || []).includes(prev)) selectEl.value = prev;
+  if (prev && valoresLimpos.includes(prev)) {
+    selectEl.value = prev;
+  }
 }
 
 async function carregarOpcoesFiltros() {
