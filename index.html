@@ -1367,20 +1367,39 @@
 
   const prev = selectEl.value || "";
 
-  // 🔥 remove vazios e duplicados
+  // 🔥 limpa tudo MESMO
+  selectEl.innerHTML = "";
+
+  // 🔥 normaliza valores
   const valoresLimpos = [...new Set(
     (values || [])
-      .map(v => String(v).trim())
-      .filter(v => v && v.toLowerCase() !== "todos")
+      .map(v => (v ?? "").toString().trim())
+      .filter(v => v !== "" && v.toLowerCase() !== "todos")
   )];
 
-  const opts = [`<option value="">${placeholder}</option>`]
-    .concat(valoresLimpos.map(v => `<option value="${v}">${v}</option>`));
+  // 🔥 adiciona placeholder único
+  const frag = document.createDocumentFragment();
 
-  selectEl.innerHTML = opts.join("");
+  const optDefault = document.createElement("option");
+  optDefault.value = "";
+  optDefault.textContent = placeholder;
+  frag.appendChild(optDefault);
 
+  // 🔥 adiciona valores reais
+  valoresLimpos.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    frag.appendChild(opt);
+  });
+
+  selectEl.appendChild(frag);
+
+  // 🔥 tenta restaurar seleção válida
   if (prev && valoresLimpos.includes(prev)) {
     selectEl.value = prev;
+  } else {
+    selectEl.value = "";
   }
 }
 
