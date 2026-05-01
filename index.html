@@ -1361,7 +1361,7 @@
     "UTILIZAÇÃO": 86.75,
     TMS: 19
   };
-console.log("POLOS:", data.polos);
+
   function setOptions(selectEl, values, placeholder = "Todos") {
   if (!selectEl) return;
 
@@ -1406,7 +1406,7 @@ let carregandoFiltros = false;
 async function carregarOpcoesFiltros() {
   if (!usuarioLogado) return;
   carregandoFiltros = true;
-
+  
   try {
     const selRegional = document.getElementById("filtroRegional");
     const selPolo = document.getElementById("filtroPolo");
@@ -1429,7 +1429,7 @@ async function carregarOpcoesFiltros() {
     const url = API_BASE + "/ipeo-filtros" + (params.toString() ? `?${params.toString()}` : "");
     const res = await fetch(url, { headers: authHeaders() });
     const data = await res.json();
-  
+    console.log("POLOS:", data.polos);
     if (!res.ok || !data.ok) {
       console.warn("Falha ao carregar opções de filtros:", data);
       return;
@@ -1594,24 +1594,26 @@ function aplicarEstadoFiltrosSalvo(){
     fecharMobileMenu();
   }
 
-  function limparFiltros() {
-    const fMat = document.getElementById("filtroMatricula");
-    const fMes = document.getElementById("filtroMes");
-    const fNome = document.getElementById("filtroNome");
-    const fRegional = document.getElementById("filtroRegional");
-    const fPolo = document.getElementById("filtroPolo");
-    const fPrest = document.getElementById("filtroPrestador");
+  async function limparFiltros() {
+  const fMat = document.getElementById("filtroMatricula");
+  const fMes = document.getElementById("filtroMes");
+  const fNome = document.getElementById("filtroNome");
+  const fRegional = document.getElementById("filtroRegional");
+  const fPolo = document.getElementById("filtroPolo");
+  const fPrest = document.getElementById("filtroPrestador");
 
+  if (fPrest) fPrest.value = "";
+  if (fMat) fMat.value = "";
+  if (fMes) fMes.value = "";
+  if (fNome) fNome.value = "";
+  if (fRegional) fRegional.value = "";
+  if (fPolo) fPolo.value = "";
 
-    if (fPrest) fPrest.value = "";
-    if (fMat) fMat.value = "";
-    if (fMes) fMes.value = "";
-    if (fNome) fNome.value = "";
-    if (fRegional) fRegional.value = "";
-    if (fPolo) fPolo.value = "";
+  // 🔥 ESSENCIAL
+  await carregarOpcoesFiltros();
 
-    carregarDados();
-  }
+  carregarDados();
+}
 
   // =========================
   // Ajuda (modal)
