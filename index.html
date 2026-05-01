@@ -1402,41 +1402,46 @@ console.log("POLOS:", data.polos);
     selectEl.value = "";
   }
 }
-
+let carregandoFiltros = false;
 async function carregarOpcoesFiltros() {
   if (!usuarioLogado) return;
+  carregandoFiltros = true;
 
-  const selRegional = document.getElementById("filtroRegional");
-  const selPolo = document.getElementById("filtroPolo");
-  const selPrest = document.getElementById("filtroPrestador");
-  const selMes = document.getElementById("filtroMes");
-
-  // Monta params para dependência (regional -> polos)
-  const params = new URLSearchParams();
-
-  // opcional: se quiser filtrar opções também por mês
-  const mes = selMes?.value?.trim();
-  if (mes) params.set("mes", mes);
-
-  const regional = selRegional?.value?.trim();
-  if (regional) params.set("regional", regional);
-
-  const polo = selPolo?.value?.trim();
-  if (polo) params.set("polo", polo);
-
-  const url = API_BASE + "/ipeo-filtros" + (params.toString() ? `?${params.toString()}` : "");
-  const res = await fetch(url, { headers: authHeaders() });
-  const data = await res.json();
-
-  if (!res.ok || !data.ok) {
-    console.warn("Falha ao carregar opções de filtros:", data);
-    return;
+  try {
+    const selRegional = document.getElementById("filtroRegional");
+    const selPolo = document.getElementById("filtroPolo");
+    const selPrest = document.getElementById("filtroPrestador");
+    const selMes = document.getElementById("filtroMes");
+  
+    // Monta params para dependência (regional -> polos)
+    const params = new URLSearchParams();
+  
+    // opcional: se quiser filtrar opções também por mês
+    const mes = selMes?.value?.trim();
+    if (mes) params.set("mes", mes);
+  
+    const regional = selRegional?.value?.trim();
+    if (regional) params.set("regional", regional);
+  
+    const polo = selPolo?.value?.trim();
+    if (polo) params.set("polo", polo);
+  
+    const url = API_BASE + "/ipeo-filtros" + (params.toString() ? `?${params.toString()}` : "");
+    const res = await fetch(url, { headers: authHeaders() });
+    const data = await res.json();
+  
+    if (!res.ok || !data.ok) {
+      console.warn("Falha ao carregar opções de filtros:", data);
+      return;
+    }
+  
+    // Preenche selects
+    setOptions(selRegional, data.regionais || [], "Todas");
+    setOptions(selPolo, data.polos || [], "Todos");
+    setOptions(selPrest, data.prestadores || [], "Todos");
+  }  finally {
+    carregandoFiltros = false;
   }
-
-  // Preenche selects
-  setOptions(selRegional, data.regionais || [], "Todas");
-  setOptions(selPolo, data.polos || [], "Todos");
-  setOptions(selPrest, data.prestadores || [], "Todos");
 }
 
 // Quando muda Regional, recarrega Polos/Prestadores
