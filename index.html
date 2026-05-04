@@ -32,7 +32,7 @@
     body{
       margin:0;
       font-family:"Segoe UI", Arial, sans-serif;
-      background:linear-graent(180deg,#eef6fa 0%, #f4f6f8 100%);
+      background:linear-gradient(180deg,#eef6fa 0%, #f4f6f8 100%);
       color:var(--text);
     }
 
@@ -1539,12 +1539,10 @@ function aplicarEstadoFiltrosSalvo(){
   }
 
   function normalizarPercentual(v) {
-  const n = Number(v || 0);
-  if (!Number.isFinite(n)) return 0;
-
-  // 🔥 CORREÇÃO
-  return n <= 1 ? n * 100 : n;
-}
+    const n = Number(v || 0);
+    if (!Number.isFinite(n)) return 0;
+    return n;
+  }
 
   function aplicarOrdenacao(lista) {
     const tipo = document.getElementById("filtroOrdenacao")?.value || "";
