@@ -1540,10 +1540,7 @@ function aplicarEstadoFiltrosSalvo(){
 
   function normalizarPercentual(v) {
   const n = Number(v || 0);
-  if (!Number.isFinite(n)) return 0;
-
-  // 🔥 CORREÇÃO
-  return n <= 1 ? n * 100 : n;
+  return Number.isFinite(n) ? n : 0;
 }
 
   function aplicarOrdenacao(lista) {
