@@ -868,7 +868,7 @@
 
 /* Grid mais compacto: mais colunas quando der */
 .filters.compact{
-  grid-template-columns: repeat(6, minmax(140px, 1fr));
+  grid-template-columns: repeat(7, minmax(140px, 1fr));
   gap:10px;
   align-items:end;
 }
@@ -1050,6 +1050,12 @@
   </select>
 </div>
 
+      <div>
+  <label for="filtroGestor">Gestor</label>
+  <select id="filtroGestor" class="input input-sm" onchange="carregarDados()">
+    <option value="">Todos</option>
+  </select>
+</div>
 
           
 
@@ -1404,42 +1410,52 @@
 }
 let carregandoFiltros = false;
 async function carregarOpcoesFiltros() {
+  let carregandoFiltros = false;
+
+async function carregarOpcoesFiltros() {
   if (!usuarioLogado) return;
+
   carregandoFiltros = true;
-  
+
   try {
     const selRegional = document.getElementById("filtroRegional");
     const selPolo = document.getElementById("filtroPolo");
+    const selGestor = document.getElementById("filtroGestor");
     const selPrest = document.getElementById("filtroPrestador");
     const selMes = document.getElementById("filtroMes");
-  
-    // Monta params para dependência (regional -> polos)
+
     const params = new URLSearchParams();
-  
-    // opcional: se quiser filtrar opções também por mês
+
     const mes = selMes?.value?.trim();
     if (mes) params.set("mes", mes);
-  
+
     const regional = selRegional?.value?.trim();
     if (regional) params.set("regional", regional);
-  
+
     const polo = selPolo?.value?.trim();
     if (polo) params.set("polo", polo);
-  
+
+    const gestor = selGestor?.value?.trim();
+    if (gestor) params.set("gestor", gestor);
+
     const url = API_BASE + "/ipeo-filtros" + (params.toString() ? `?${params.toString()}` : "");
+
     const res = await fetch(url, { headers: authHeaders() });
     const data = await res.json();
-    console.log("POLOS:", data.polos);
+
+    console.log("FILTROS IPEO:", data);
+
     if (!res.ok || !data.ok) {
       console.warn("Falha ao carregar opções de filtros:", data);
       return;
     }
-  
-    // Preenche selects
+
     setOptions(selRegional, data.regionais || [], "Todas");
     setOptions(selPolo, data.polos || [], "Todos");
+    setOptions(selGestor, data.gestores || [], "Todos");
     setOptions(selPrest, data.prestadores || [], "Todos");
-  }  finally {
+
+  } finally {
     carregandoFiltros = false;
   }
 }
@@ -1599,6 +1615,7 @@ function aplicarEstadoFiltrosSalvo(){
   const fNome = document.getElementById("filtroNome");
   const fRegional = document.getElementById("filtroRegional");
   const fPolo = document.getElementById("filtroPolo");
+  const fGestor = document.getElementById("filtroGestor");
   const fPrest = document.getElementById("filtroPrestador");
 
   if (fPrest) fPrest.value = "";
@@ -1607,8 +1624,8 @@ function aplicarEstadoFiltrosSalvo(){
   if (fNome) fNome.value = "";
   if (fRegional) fRegional.value = "";
   if (fPolo) fPolo.value = "";
+  if (fGestor) fGestor.value = "";
 
-  // 🔥 ESSENCIAL
   await carregarOpcoesFiltros();
 
   carregarDados();
@@ -1761,14 +1778,16 @@ function aplicarEstadoFiltrosSalvo(){
         const mes = document.getElementById("filtroMes")?.value.trim();
         const nome = document.getElementById("filtroNome")?.value.trim();
         const regional = document.getElementById("filtroRegional")?.value.trim();
-        const polo = document.getElementById("filtroPolo")?.value.trim();        
+        const polo = document.getElementById("filtroPolo")?.value.trim();
+        const gestor = document.getElementById("filtroGestor")?.value.trim();
         const prestador = document.getElementById("filtroPrestador")?.value.trim();
-
+        
         if (matricula) params.set("matricula", matricula);
         if (mes) params.set("mes", mes);
         if (nome) params.set("nome", nome);
         if (regional) params.set("regional", regional);
         if (polo) params.set("polo", polo);
+        if (gestor) params.set("gestor", gestor);
         if (prestador) params.set("prestador", prestador);
       }
 
@@ -1945,13 +1964,15 @@ function aplicarEstadoFiltrosSalvo(){
     let nomeArquivo = "resultados_ipeo";
 
     if (usuarioLogado?.isAdmin) {
-      const matricula = document.getElementById("filtroMatricula")?.value.trim();
-      const nome = document.getElementById("filtroNome")?.value.trim();
-      const mes = document.getElementById("filtroMes")?.value.trim();
+     const matricula = document.getElementById("filtroMatricula")?.value.trim();
+const nome = document.getElementById("filtroNome")?.value.trim();
+const mes = document.getElementById("filtroMes")?.value.trim();
+const gestor = document.getElementById("filtroGestor")?.value.trim();
 
-      if (matricula) nomeArquivo += `_matricula_${matricula}`;
-      if (nome) nomeArquivo += `_nome_${nome.replace(/\s+/g, "_")}`;
-      if (mes) nomeArquivo += `_mes_${mes}`;
+if (matricula) nomeArquivo += `_matricula_${matricula}`;
+if (nome) nomeArquivo += `_nome_${nome.replace(/\s+/g, "_")}`;
+if (mes) nomeArquivo += `_mes_${mes}`;
+if (gestor) nomeArquivo += `_gestor_${gestor.replace(/\s+/g, "_")}`;
     } else {
       nomeArquivo += `_${usuarioLogado?.matricula || "usuario"}`;
     }
