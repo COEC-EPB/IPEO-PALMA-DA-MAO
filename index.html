@@ -2022,85 +2022,480 @@ if (gestor) nomeArquivo += `_gestor_${gestor.replace(/\s+/g, "_")}`;
   return { min, max, step };
 }
 
+// ========================================================
+// CONFIGURAÇÃO DOS CÁLCULOS REAIS DOS INDICADORES
+// O resultado mensal será:
+// SOMA(numerador) / SOMA(denominador) * 100
+// ========================================================
+const CALCULOS_INDICADORES = {
+  IPEO: {
+    numerador: [
+      "hh_improd_total",
+      "hhImproTotal",
+      "hh_improd",
+      "HH IMPROD TOTAL",
+      "HH_IMPROD_TOTAL"
+    ],
+    denominador: [
+      "hh_total",
+      "hhTotal",
+      "HH TOTAL",
+      "HH_TOTAL"
+    ],
+    multiplicador: 100,
 
-  // =========================
-  // Gráfico
-  // =========================
-  function abrirGraficoIndicador(indicador) {
-  const modal = document.getElementById("chartModal");
-  const title = document.getElementById("chartTitle");
+    // Caso o IPEO correto seja 100 - percentual improdutivo,
+    // altere para true.
+    inverter: false
+  },
 
-  const mapaIndicadores = {
-    "IPEO": "ipeo",
-    "DI": "di",
-    "ROE": "roe",
-    "RNT": "rnt",
-    "IOC": "ioc",
-    "ISF": "isf",
-    "ROV": "rov",
-    "PRODUTIVIDADE": "produtividade",
-    "EFICIÊNCIA": "eficiencia",
-    "UTILIZAÇÃO": "utilizacao",
-    "TMS": "tms"
-  };
+  DI: {
+    numerador: [
+      "qtd_di",
+      "di_total",
+      "numerador_di",
+      "DI",
+      "QTD DI"
+    ],
+    denominador: [
+      "base_di",
+      "total_di",
+      "denominador_di",
+      "TOTAL DI"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
 
-  const chave = mapaIndicadores[indicador] || indicador.toLowerCase();
+  ROE: {
+    numerador: [
+      "qtd_roe",
+      "roe_total",
+      "numerador_roe",
+      "ROE",
+      "QTD ROE"
+    ],
+    denominador: [
+      "base_roe",
+      "total_roe",
+      "denominador_roe",
+      "TOTAL ROE"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
 
-  const mesesFixos = ["01","02","03","04","05","06","07","08","09","10","11","12"];
-  const mesesLabel = {
-    "01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
-    "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"
-  };
+  RNT: {
+    numerador: [
+      "qtd_rnt",
+      "rnt_total",
+      "numerador_rnt",
+      "RNT",
+      "QTD RNT"
+    ],
+    denominador: [
+      "base_rnt",
+      "total_rnt",
+      "denominador_rnt",
+      "TOTAL RNT"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
 
-  const grupos = {};
-  for (const mes of mesesFixos) grupos[mes] = [];
+  IOC: {
+    numerador: [
+      "qtd_ioc",
+      "ioc_total",
+      "numerador_ioc",
+      "IOC",
+      "QTD IOC"
+    ],
+    denominador: [
+      "base_ioc",
+      "total_ioc",
+      "denominador_ioc",
+      "TOTAL IOC"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
 
-  for (const row of ultimoResultadoDetalhado) {
-    const mes = String(row.mes || "").padStart(2, "0");
+  ISF: {
+    numerador: [
+      "qtd_isf",
+      "isf_total",
+      "numerador_isf",
+      "ISF",
+      "QTD ISF"
+    ],
+    denominador: [
+      "base_isf",
+      "total_isf",
+      "denominador_isf",
+      "TOTAL ISF"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
 
-    if (!grupos[mes]) continue;
+  ROV: {
+    numerador: [
+      "qtd_rov",
+      "rov_total",
+      "numerador_rov",
+      "ROV",
+      "QTD ROV"
+    ],
+    denominador: [
+      "base_rov",
+      "total_rov",
+      "denominador_rov",
+      "TOTAL ROV"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
 
-    if (indicador === "TMS") {
-      const valor = Number(row[chave]);
+  PRODUTIVIDADE: {
+    numerador: [
+      "hh_produtivo",
+      "hh_produtivo_total",
+      "numerador_produtividade",
+      "HH PRODUTIVO",
+      "HH PRODUTIVO TOTAL"
+    ],
+    denominador: [
+      "hh_total",
+      "hhTotal",
+      "denominador_produtividade",
+      "HH TOTAL"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
 
-      // ✅ Ignora TMS zerado, vazio, null e inválido
-      if (Number.isFinite(valor) && valor > 0) {
-        grupos[mes].push(valor);
-      }
-    } else {
-      const valor = normalizarPercentual(row[chave]);
+  "EFICIÊNCIA": {
+    numerador: [
+      "hh_padrao",
+      "hh_padrao_total",
+      "numerador_eficiencia",
+      "HH PADRAO",
+      "HH PADRÃO"
+    ],
+    denominador: [
+      "hh_execucao",
+      "hh_execucao_total",
+      "denominador_eficiencia",
+      "HH EXECUCAO",
+      "HH EXECUÇÃO"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
 
-      if (Number.isFinite(valor)) {
-        grupos[mes].push(valor);
+  "UTILIZAÇÃO": {
+    numerador: [
+      "hh_utilizado",
+      "hh_utilizado_total",
+      "numerador_utilizacao",
+      "HH UTILIZADO",
+      "HH UTILIZADO TOTAL"
+    ],
+    denominador: [
+      "hh_disponivel",
+      "hh_disponivel_total",
+      "denominador_utilizacao",
+      "HH DISPONIVEL",
+      "HH DISPONÍVEL"
+    ],
+    multiplicador: 100,
+    inverter: false
+  },
+
+  TMS: {
+    numerador: [
+      "tempo_tms_total",
+      "minutos_tms_total",
+      "numerador_tms",
+      "TEMPO TMS TOTAL"
+    ],
+    denominador: [
+      "qtd_tms",
+      "quantidade_tms",
+      "denominador_tms",
+      "QTD TMS"
+    ],
+    multiplicador: 1,
+    inverter: false
+  }
+};
+
+   function normalizarNomeCampo(nome) {
+  return String(nome || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[%]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toLowerCase();
+}
+
+function converterNumero(valor) {
+  if (
+    valor === null ||
+    valor === undefined ||
+    valor === ""
+  ) {
+    return null;
+  }
+
+  if (typeof valor === "number") {
+    return Number.isFinite(valor) ? valor : null;
+  }
+
+  let texto = String(valor)
+    .trim()
+    .replace(/\s/g, "")
+    .replace("%", "");
+
+  // Aceita:
+  // 1.234,56
+  // 1234,56
+  // 1234.56
+  if (texto.includes(",") && texto.includes(".")) {
+    texto = texto.replace(/\./g, "").replace(",", ".");
+  } else if (texto.includes(",")) {
+    texto = texto.replace(",", ".");
+  }
+
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : null;
+}
+
+function obterValorPorAliases(objeto, aliases) {
+  if (!objeto || !aliases?.length) return null;
+
+  // Primeiro tenta localizar diretamente.
+  for (const alias of aliases) {
+    if (
+      Object.prototype.hasOwnProperty.call(objeto, alias) &&
+      objeto[alias] !== null &&
+      objeto[alias] !== undefined &&
+      objeto[alias] !== ""
+    ) {
+      return converterNumero(objeto[alias]);
+    }
+  }
+
+  // Depois tenta localizar ignorando espaços, acentos,
+  // underscores e diferenças entre maiúsculas e minúsculas.
+  const mapaCampos = {};
+
+  Object.keys(objeto).forEach(campo => {
+    mapaCampos[normalizarNomeCampo(campo)] = campo;
+  });
+
+  for (const alias of aliases) {
+    const campoReal = mapaCampos[normalizarNomeCampo(alias)];
+
+    if (campoReal !== undefined) {
+      const valor = converterNumero(objeto[campoReal]);
+
+      if (valor !== null) {
+        return valor;
       }
     }
   }
 
-  const labels = mesesFixos.map(m => mesesLabel[m]);
-  const valores = mesesFixos.map(m => {
-    const arr = grupos[m];
-    if (!arr || !arr.length) return null;
+  return null;
+}
 
-    const media = arr.reduce((a, b) => a + b, 0) / arr.length;
+function calcularIndicadorRealMensal(indicador, linhas) {
+  const configuracao = CALCULOS_INDICADORES[indicador];
+
+  if (!configuracao || !Array.isArray(linhas) || !linhas.length) {
+    return null;
+  }
+
+  let somaNumerador = 0;
+  let somaDenominador = 0;
+  let linhasValidas = 0;
+
+  for (const linha of linhas) {
+    const numerador = obterValorPorAliases(
+      linha,
+      configuracao.numerador
+    );
+
+    const denominador = obterValorPorAliases(
+      linha,
+      configuracao.denominador
+    );
+
+    if (
+      numerador === null ||
+      denominador === null ||
+      denominador <= 0
+    ) {
+      continue;
+    }
+
+    somaNumerador += numerador;
+    somaDenominador += denominador;
+    linhasValidas++;
+  }
+
+  if (!linhasValidas || somaDenominador <= 0) {
+    return null;
+  }
+
+  let resultado =
+    (somaNumerador / somaDenominador) *
+    Number(configuracao.multiplicador ?? 100);
+
+  if (configuracao.inverter) {
+    resultado = 100 - resultado;
+  }
+
+  return Number(resultado.toFixed(2));
+}
+  // =========================
+  // Gráfico
+  // =========================
+function abrirGraficoIndicador(indicador) {
+  const modal = document.getElementById("chartModal");
+  const title = document.getElementById("chartTitle");
+
+  const mapaIndicadores = {
+    IPEO: "ipeo",
+    DI: "di",
+    ROE: "roe",
+    RNT: "rnt",
+    IOC: "ioc",
+    ISF: "isf",
+    ROV: "rov",
+    PRODUTIVIDADE: "produtividade",
+    "EFICIÊNCIA": "eficiencia",
+    "UTILIZAÇÃO": "utilizacao",
+    TMS: "tms"
+  };
+
+  const chavePercentual =
+    mapaIndicadores[indicador] || indicador.toLowerCase();
+
+  const mesesFixos = [
+    "01", "02", "03", "04", "05", "06",
+    "07", "08", "09", "10", "11", "12"
+  ];
+
+  const mesesLabel = {
+    "01": "Jan",
+    "02": "Fev",
+    "03": "Mar",
+    "04": "Abr",
+    "05": "Mai",
+    "06": "Jun",
+    "07": "Jul",
+    "08": "Ago",
+    "09": "Set",
+    "10": "Out",
+    "11": "Nov",
+    "12": "Dez"
+  };
+
+  // Guarda as linhas completas de cada mês.
+  const linhasPorMes = {};
+
+  mesesFixos.forEach(mes => {
+    linhasPorMes[mes] = [];
+  });
+
+  for (const row of ultimoResultadoDetalhado) {
+    const mes = String(row.mes || "").padStart(2, "0");
+
+    if (!linhasPorMes[mes]) continue;
+
+    linhasPorMes[mes].push(row);
+  }
+
+  const labels = mesesFixos.map(mes => mesesLabel[mes]);
+
+  const valores = mesesFixos.map(mes => {
+    const linhasMes = linhasPorMes[mes];
+
+    if (!linhasMes?.length) {
+      return null;
+    }
+
+    /*
+     * Cálculo correto:
+     * soma dos numeradores / soma dos denominadores.
+     *
+     * Exemplo do IPEO:
+     * SOMA(HH IMPROD TOTAL) / SOMA(HH TOTAL) * 100
+     */
+    const calculado = calcularIndicadorRealMensal(
+      indicador,
+      linhasMes
+    );
+
+    if (calculado !== null) {
+      return calculado;
+    }
+
+    /*
+     * Fallback temporário:
+     * Se a API ainda não estiver devolvendo os componentes,
+     * utiliza o percentual pronto.
+     *
+     * Esse fallback pode ser removido depois que todos os
+     * numeradores e denominadores estiverem disponíveis.
+     */
+    const valoresProntos = linhasMes
+      .map(row => converterNumero(row[chavePercentual]))
+      .filter(valor => {
+        if (valor === null) return false;
+        if (indicador === "TMS" && valor <= 0) return false;
+        return true;
+      });
+
+    if (!valoresProntos.length) {
+      return null;
+    }
+
+    // Mantido somente como compatibilidade temporária.
+    const media =
+      valoresProntos.reduce((total, valor) => total + valor, 0) /
+      valoresProntos.length;
+
     return Number(media.toFixed(2));
   });
 
-  title.textContent = `Evolução do ${indicador} ao longo do ano`;
+  title.textContent =
+    `Evolução do ${indicador} ao longo do ano`;
 
   if (indicadorChart) {
     indicadorChart.destroy();
     indicadorChart = null;
   }
 
-  const ctx = document.getElementById("indicatorChart").getContext("2d");
+  const canvas = document.getElementById("indicatorChart");
 
+  if (!canvas) {
+    console.error("Canvas indicatorChart não encontrado.");
+    return;
+  }
+
+  const ctx = canvas.getContext("2d");
   const metaVal = Number(METAS[indicador] || 0);
   const escala = calcularEscalaY(valores, metaVal, indicador);
 
   indicadorChart = new Chart(ctx, {
     type: "line",
+
     data: {
       labels,
+
       datasets: [
         {
           label: indicador,
@@ -2111,27 +2506,46 @@ if (gestor) nomeArquivo += `_gestor_${gestor.replace(/\s+/g, "_")}`;
           pointRadius: 4,
           pointHoverRadius: 5,
           spanGaps: true,
-          borderColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
-          backgroundColor: indicador === "IPEO" ? "#0097CE" : "#F36F21",
+
+          borderColor:
+            indicador === "IPEO" ? "#0097CE" : "#F36F21",
+
+          backgroundColor:
+            indicador === "IPEO" ? "#0097CE" : "#F36F21",
+
           datalabels: {
-            display: true,
+            display: context => context.dataset.data[
+              context.dataIndex
+            ] !== null,
+
             align: "top",
             anchor: "end",
             offset: 4,
             clamp: true,
             clip: false,
-            formatter: (value) => {
-              if (value == null) return "";
+
+            formatter: value => {
+              if (value === null || value === undefined) {
+                return "";
+              }
+
+              const numero = Number(value);
+
               return indicador === "TMS"
-                ? value.toFixed(1).replace(".", ",")
-                : `${value.toFixed(1).replace(".", ",")}%`;
+                ? numero.toFixed(1).replace(".", ",")
+                : `${numero.toFixed(1).replace(".", ",")}%`;
             },
-            font: { size: 10, weight: "600" }
+
+            font: {
+              size: 10,
+              weight: "600"
+            }
           }
         },
+
         {
           label: "Meta",
-          data: mesesFixos.map(() => Number(METAS[indicador] || 0)),
+          data: mesesFixos.map(() => metaVal),
           tension: 0,
           stepped: true,
           fill: false,
@@ -2140,21 +2554,45 @@ if (gestor) nomeArquivo += `_gestor_${gestor.replace(/\s+/g, "_")}`;
           pointRadius: 0,
           borderColor: "#ff6384",
           backgroundColor: "#ff6384",
-          datalabels: { display: false }
+          datalabels: {
+            display: false
+          }
         }
       ]
     },
+
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: "index", intersect: false },
+
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+
       plugins: {
-        legend: { display: true },
-        datalabels: { color: "#374151" },
+        legend: {
+          display: true
+        },
+
+        datalabels: {
+          color: "#374151"
+        },
+
         tooltip: {
           callbacks: {
-            label: function (context) {
-              const valor = Number(context.raw || 0).toFixed(2).replace(".", ",");
+            label(context) {
+              if (
+                context.raw === null ||
+                context.raw === undefined
+              ) {
+                return `${context.dataset.label}: sem dados`;
+              }
+
+              const valor = Number(context.raw)
+                .toFixed(2)
+                .replace(".", ",");
+
               return indicador === "TMS"
                 ? `${context.dataset.label}: ${valor}`
                 : `${context.dataset.label}: ${valor}%`;
@@ -2162,28 +2600,40 @@ if (gestor) nomeArquivo += `_gestor_${gestor.replace(/\s+/g, "_")}`;
           }
         }
       },
+
       scales: {
         y: {
           beginAtZero: false,
           min: escala.min,
           max: escala.max,
+
           ticks: {
             stepSize: escala.step,
-            callback: function(value){
+
+            callback(value) {
+              const formatado = Number(value)
+                .toFixed(0)
+                .replace(".", ",");
+
               return indicador === "TMS"
-                ? Number(value).toFixed(0).replace(".", ",")
-                : Number(value).toFixed(0).replace(".", ",") + "%";
+                ? formatado
+                : `${formatado}%`;
             }
           },
+
           grid: {
             color: "rgba(148,163,184,.25)"
           }
         },
+
         x: {
-          grid: { display: false }
+          grid: {
+            display: false
+          }
         }
       }
     },
+
     plugins: [ChartDataLabels]
   });
 
