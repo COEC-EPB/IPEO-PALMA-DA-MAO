@@ -2028,204 +2028,80 @@ if (gestor) nomeArquivo += `_gestor_${gestor.replace(/\s+/g, "_")}`;
 // SOMA(numerador) / SOMA(denominador) * 100
 // ========================================================
 const CALCULOS_INDICADORES = {
-  IPEO: {
-    numerador: [
-      "hh_improd_total",
-      "hhImproTotal",
-      "hh_improd",
-      "HH IMPROD TOTAL",
-      "HH_IMPROD_TOTAL"
-    ],
-    denominador: [
-      "hh_total",
-      "hhTotal",
-      "HH TOTAL",
-      "HH_TOTAL"
-    ],
-    multiplicador: 100,
 
-    // Caso o IPEO correto seja 100 - percentual improdutivo,
-    // altere para true.
-    inverter: false
+  IPEO: {
+    numerador: ["hh_improd_total"],
+    denominador: ["hh_total"],
+    multiplicador: 100,
+    inverter: true
   },
 
   DI: {
-    numerador: [
-      "qtd_di",
-      "di_total",
-      "numerador_di",
-      "DI",
-      "QTD DI"
-    ],
-    denominador: [
-      "base_di",
-      "total_di",
-      "denominador_di",
-      "TOTAL DI"
-    ],
+    numerador: ["hh_improd_di"],
+    denominador: ["hh_total_di"],
     multiplicador: 100,
     inverter: false
   },
 
   ROE: {
-    numerador: [
-      "qtd_roe",
-      "roe_total",
-      "numerador_roe",
-      "ROE",
-      "QTD ROE"
-    ],
-    denominador: [
-      "base_roe",
-      "total_roe",
-      "denominador_roe",
-      "TOTAL ROE"
-    ],
+    numerador: ["hh_improd_roe"],
+    denominador: ["hh_total_roe"],
     multiplicador: 100,
     inverter: false
   },
 
   RNT: {
-    numerador: [
-      "qtd_rnt",
-      "rnt_total",
-      "numerador_rnt",
-      "RNT",
-      "QTD RNT"
-    ],
-    denominador: [
-      "base_rnt",
-      "total_rnt",
-      "denominador_rnt",
-      "TOTAL RNT"
-    ],
+    numerador: ["hh_improd_rnt"],
+    denominador: ["hh_total_rnt"],
     multiplicador: 100,
     inverter: false
   },
 
   IOC: {
-    numerador: [
-      "qtd_ioc",
-      "ioc_total",
-      "numerador_ioc",
-      "IOC",
-      "QTD IOC"
-    ],
-    denominador: [
-      "base_ioc",
-      "total_ioc",
-      "denominador_ioc",
-      "TOTAL IOC"
-    ],
+    numerador: ["hh_improd_ioc"],
+    denominador: ["hh_total_ioc"],
     multiplicador: 100,
     inverter: false
   },
 
   ISF: {
-    numerador: [
-      "qtd_isf",
-      "isf_total",
-      "numerador_isf",
-      "ISF",
-      "QTD ISF"
-    ],
-    denominador: [
-      "base_isf",
-      "total_isf",
-      "denominador_isf",
-      "TOTAL ISF"
-    ],
+    numerador: ["hh_improd_isf"],
+    denominador: ["hh_total_isf"],
     multiplicador: 100,
     inverter: false
   },
 
   ROV: {
-    numerador: [
-      "qtd_rov",
-      "rov_total",
-      "numerador_rov",
-      "ROV",
-      "QTD ROV"
-    ],
-    denominador: [
-      "base_rov",
-      "total_rov",
-      "denominador_rov",
-      "TOTAL ROV"
-    ],
+    numerador: ["hh_improd_rov"],
+    denominador: ["hh_total_rov"],
     multiplicador: 100,
     inverter: false
   },
 
   PRODUTIVIDADE: {
-    numerador: [
-      "hh_produtivo",
-      "hh_produtivo_total",
-      "numerador_produtividade",
-      "HH PRODUTIVO",
-      "HH PRODUTIVO TOTAL"
-    ],
-    denominador: [
-      "hh_total",
-      "hhTotal",
-      "denominador_produtividade",
-      "HH TOTAL"
-    ],
+    numerador: ["hh_produtivo"],
+    denominador: ["hh_total"],
     multiplicador: 100,
     inverter: false
   },
 
   "EFICIÊNCIA": {
-    numerador: [
-      "hh_padrao",
-      "hh_padrao_total",
-      "numerador_eficiencia",
-      "HH PADRAO",
-      "HH PADRÃO"
-    ],
-    denominador: [
-      "hh_execucao",
-      "hh_execucao_total",
-      "denominador_eficiencia",
-      "HH EXECUCAO",
-      "HH EXECUÇÃO"
-    ],
+    numerador: ["hh_padrao"],
+    denominador: ["hh_execucao"],
     multiplicador: 100,
     inverter: false
   },
 
   "UTILIZAÇÃO": {
-    numerador: [
-      "hh_utilizado",
-      "hh_utilizado_total",
-      "numerador_utilizacao",
-      "HH UTILIZADO",
-      "HH UTILIZADO TOTAL"
-    ],
-    denominador: [
-      "hh_disponivel",
-      "hh_disponivel_total",
-      "denominador_utilizacao",
-      "HH DISPONIVEL",
-      "HH DISPONÍVEL"
-    ],
+    numerador: ["hh_utilizado"],
+    denominador: ["hh_disponivel"],
     multiplicador: 100,
     inverter: false
   },
 
   TMS: {
-    numerador: [
-      "tempo_tms_total",
-      "minutos_tms_total",
-      "numerador_tms",
-      "TEMPO TMS TOTAL"
-    ],
-    denominador: [
-      "qtd_tms",
-      "quantidade_tms",
-      "denominador_tms",
-      "QTD TMS"
-    ],
+    numerador: ["tempo_tms_total"],
+    denominador: ["qtd_tms"],
     multiplicador: 1,
     inverter: false
   }
@@ -2356,7 +2232,12 @@ function calcularIndicadorRealMensal(indicador, linhas) {
   if (configuracao.inverter) {
     resultado = 100 - resultado;
   }
-
+  console.log({
+  indicador,
+  somaNumerador,
+  somaDenominador,
+  resultado
+});
   return Number(resultado.toFixed(2));
 }
   // =========================
