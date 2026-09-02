@@ -2333,12 +2333,16 @@ function abrirGraficoIndicador(indicador) {
      * numeradores e denominadores estiverem disponíveis.
      */
     const valoresProntos = linhasMes
-      .map(row => converterNumero(row[chavePercentual]))
-      .filter(valor => {
-        if (valor === null) return false;
-        if (indicador === "TMS" && valor <= 0) return false;
-        return true;
-      });
+  .map(row => converterNumero(row[chavePercentual]))
+  .filter(valor => {
+    if (valor === null) return false;
+    if (!Number.isFinite(valor)) return false;
+
+    // Zero representa férias, afastamento ou ausência de base válida
+    if (valor <= 0) return false;
+
+    return true;
+  });
 
     if (!valoresProntos.length) {
       return null;
