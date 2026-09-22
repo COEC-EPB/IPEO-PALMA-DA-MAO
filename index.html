@@ -2564,12 +2564,10 @@ function abrirGraficoIndicador(indicador) {
     const dt = new Date(data.ultimaImportacao);
 
     el.innerHTML = `
-      <i class="bi bi-clock-history"></i>
-      Última importação:
-      <b>${dt.toLocaleString("pt-BR")}</b>
-      por <b>${data.usuario}</b>
-      (${data.matricula})
-    `;
+  <i class="bi bi-clock-history"></i>
+  Última importação:
+  <b>${dt.toLocaleString("pt-BR")}</b>
+`;
   } catch (e) {
     console.error(e);
   }
