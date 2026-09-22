@@ -999,6 +999,15 @@
             <i class="bi bi-arrow-clockwise"></i> Atualizar
           </button>
 
+          <div id="ultimaImportacaoInfo"
+     style="
+       font-size:13px;
+       color:#64748b;
+       margin-top:8px;
+     ">
+  Última importação: -
+</div>
+
           <button class="btn btn-soft" onclick="abrirAjuda('mip')">
   <i class="bi bi-info-circle"></i> Entendendo os indicadores
 </button>
@@ -1736,6 +1745,7 @@ function aplicarEstadoFiltrosSalvo(){
     }
 
     await carregarDados();
+    await carregarUltimaImportacao();
   } catch (err) {
     clearToken();
     usuarioLogado = null;
@@ -2529,6 +2539,41 @@ function abrirGraficoIndicador(indicador) {
     if (event && event.target && event.target.id !== "chartModal") return;
     document.getElementById("chartModal").classList.remove("show");
   }
+
+   async function carregarUltimaImportacao() {
+  try {
+    const res = await fetch(
+      API_BASE + "/ultima-importacao",
+      {
+        headers: authHeaders()
+      }
+    );
+
+    const data = await res.json();
+
+    if (!data.ok) return;
+
+    const el = document.getElementById("ultimaImportacaoInfo");
+
+    if (!data.ultimaImportacao) {
+      el.innerHTML =
+        '<i class="bi bi-clock-history"></i> Nenhuma importação registrada';
+      return;
+    }
+
+    const dt = new Date(data.ultimaImportacao);
+
+    el.innerHTML = `
+      <i class="bi bi-clock-history"></i>
+      Última importação:
+      <b>${dt.toLocaleString("pt-BR")}</b>
+      por <b>${data.usuario}</b>
+      (${data.matricula})
+    `;
+  } catch (e) {
+    console.error(e);
+  }
+}
 
   // =========================
   // Importação Excel (admin)
