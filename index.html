@@ -2485,6 +2485,14 @@ function calcularIndicadorRealMensal(indicador, linhas) {
 function abrirGraficoIndicador(indicador) {
   const modal = document.getElementById("chartModal");
   const title = document.getElementById("chartTitle");
+  const canvas = document.getElementById("indicatorChart");
+
+  if (!modal || !title || !canvas) {
+    console.error(
+      "Não foi possível localizar os elementos do gráfico."
+    );
+    return;
+  }
 
   const mapaIndicadores = {
     IPEO: "ipeo",
@@ -2501,7 +2509,8 @@ function abrirGraficoIndicador(indicador) {
   };
 
   const chavePercentual =
-    mapaIndicadores[indicador] || indicador.toLowerCase();
+    mapaIndicadores[indicador] ||
+    String(indicador || "").toLowerCase();
 
   const mesesFixos = [
     "01", "02", "03", "04", "05", "06",
@@ -2523,88 +2532,49 @@ function abrirGraficoIndicador(indicador) {
     "12": "Dez"
   };
 
-  // Guarda as linhas completas de cada mês.
   const labels = mesesFixos.map(
-  mes => mesesLabel[mes]
-);
-
-const registroPorMes = {};
-
-for (const item of ultimoHistoricoIndicadores) {
-  const mes = String(
-    item.mes || ""
-  ).padStart(2, "0");
-
-  registroPorMes[mes] = item;
-}
-
-const valores = mesesFixos.map(mes => {
-  const item = registroPorMes[mes];
-
-  if (!item) {
-    return null;
-  }
-
-  const valor = converterNumero(
-    item[chavePercentual]
+    mes => mesesLabel[mes]
   );
 
-  if (
-    valor === null ||
-    !Number.isFinite(valor)
-  ) {
-    return null;
+  /*
+   * Monta um mapa contendo no máximo
+   * um registro consolidado por mês.
+   */
+  const registroPorMes = {};
+
+  for (const item of ultimoHistoricoIndicadores) {
+    const mes = String(
+      item.mes || ""
+    ).padStart(2, "0");
+
+    if (mesesFixos.includes(mes)) {
+      registroPorMes[mes] = item;
+    }
   }
 
-  return Number(valor.toFixed(2));
-});}
+  /*
+   * Obtém o valor mensal do indicador
+   * já calculado pelo Worker.
+   */
+  const valores = mesesFixos.map(mes => {
+    const item = registroPorMes[mes];
 
-    /*
-     * Cálculo correto:
-     * soma dos numeradores / soma dos denominadores.
-     *
-     * Exemplo do IPEO:
-     * SOMA(HH IMPROD TOTAL) / SOMA(HH TOTAL) * 100
-     */
-    const calculado = calcularIndicadorRealMensal(
-      indicador,
-      linhasMes
-    );
-
-    if (calculado !== null) {
-      return calculado;
-    }
-
-    /*
-     * Fallback temporário:
-     * Se a API ainda não estiver devolvendo os componentes,
-     * utiliza o percentual pronto.
-     *
-     * Esse fallback pode ser removido depois que todos os
-     * numeradores e denominadores estiverem disponíveis.
-     */
-    const valoresProntos = linhasMes
-  .map(row => converterNumero(row[chavePercentual]))
-  .filter(valor => {
-    if (valor === null) return false;
-    if (!Number.isFinite(valor)) return false;
-
-    // Zero representa férias, afastamento ou ausência de base válida
-    if (valor <= 0) return false;
-
-    return true;
-  });
-
-    if (!valoresProntos.length) {
+    if (!item) {
       return null;
     }
 
-    // Mantido somente como compatibilidade temporária.
-    const media =
-      valoresProntos.reduce((total, valor) => total + valor, 0) /
-      valoresProntos.length;
+    const valor = converterNumero(
+      item[chavePercentual]
+    );
 
-    return Number(media.toFixed(2));
+    if (
+      valor === null ||
+      !Number.isFinite(valor)
+    ) {
+      return null;
+    }
+
+    return Number(valor.toFixed(2));
   });
 
   title.textContent =
@@ -2615,16 +2585,24 @@ const valores = mesesFixos.map(mes => {
     indicadorChart = null;
   }
 
-  const canvas = document.getElementById("indicatorChart");
+  const ctx = canvas.getContext("2d");
 
-  if (!canvas) {
-    console.error("Canvas indicatorChart não encontrado.");
+  if (!ctx) {
+    console.error(
+      "Não foi possível obter o contexto do gráfico."
+    );
     return;
   }
 
-  const ctx = canvas.getContext("2d");
-  const metaVal = Number(METAS[indicador] || 0);
-  const escala = calcularEscalaY(valores, metaVal, indicador);
+  const metaVal = Number(
+    METAS[indicador] || 0
+  );
+
+  const escala = calcularEscalaY(
+    valores,
+    metaVal,
+    indicador
+  );
 
   indicadorChart = new Chart(ctx, {
     type: "line",
@@ -2644,15 +2622,27 @@ const valores = mesesFixos.map(mes => {
           spanGaps: true,
 
           borderColor:
-            indicador === "IPEO" ? "#0097CE" : "#F36F21",
+            indicador === "IPEO"
+              ? "#0097CE"
+              : "#F36F21",
 
           backgroundColor:
-            indicador === "IPEO" ? "#0097CE" : "#F36F21",
+            indicador === "IPEO"
+              ? "#0097CE"
+              : "#F36F21",
 
           datalabels: {
-            display: context => context.dataset.data[
-              context.dataIndex
-            ] !== null,
+            display: context => {
+              const valor =
+                context.dataset.data[
+                  context.dataIndex
+                ];
+
+              return (
+                valor !== null &&
+                valor !== undefined
+              );
+            },
 
             align: "top",
             anchor: "end",
@@ -2661,15 +2651,28 @@ const valores = mesesFixos.map(mes => {
             clip: false,
 
             formatter: value => {
-              if (value === null || value === undefined) {
+              if (
+                value === null ||
+                value === undefined
+              ) {
                 return "";
               }
 
               const numero = Number(value);
 
+              if (!Number.isFinite(numero)) {
+                return "";
+              }
+
               return indicador === "TMS"
-                ? numero.toFixed(1).replace(".", ",")
-                : `${numero.toFixed(1).replace(".", ",")}%`;
+                ? numero
+                    .toFixed(1)
+                    .replace(".", ",")
+                : `${
+                    numero
+                      .toFixed(1)
+                      .replace(".", ",")
+                  }%`;
             },
 
             font: {
@@ -2690,6 +2693,7 @@ const valores = mesesFixos.map(mes => {
           pointRadius: 0,
           borderColor: "#ff6384",
           backgroundColor: "#ff6384",
+
           datalabels: {
             display: false
           }
@@ -2722,10 +2726,22 @@ const valores = mesesFixos.map(mes => {
                 context.raw === null ||
                 context.raw === undefined
               ) {
-                return `${context.dataset.label}: sem dados`;
+                return (
+                  `${context.dataset.label}: sem dados`
+                );
               }
 
-              const valor = Number(context.raw)
+              const numero = Number(
+                context.raw
+              );
+
+              if (!Number.isFinite(numero)) {
+                return (
+                  `${context.dataset.label}: sem dados`
+                );
+              }
+
+              const valor = numero
                 .toFixed(2)
                 .replace(".", ",");
 
@@ -2770,7 +2786,9 @@ const valores = mesesFixos.map(mes => {
       }
     },
 
-    plugins: [ChartDataLabels]
+    plugins: [
+      ChartDataLabels
+    ]
   });
 
   modal.classList.add("show");
