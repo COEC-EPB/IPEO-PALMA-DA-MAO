@@ -1202,6 +1202,42 @@
     Página 1
   </div>
 
+            <div
+  style="
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+    margin-bottom:12px;
+  "
+>
+  <button
+    class="btn btn-soft btn-sm"
+    onclick="paginaAnterior()"
+  >
+    <i class="bi bi-chevron-left"></i>
+  </button>
+
+  <span
+    id="infoPaginacaoCentro"
+    style="
+      font-weight:700;
+      color:#475569;
+      min-width:120px;
+      text-align:center;
+    "
+  >
+    Página 1
+  </span>
+
+  <button
+    class="btn btn-soft btn-sm"
+    onclick="proximaPagina()"
+  >
+    <i class="bi bi-chevron-right"></i>
+  </button>
+</div>
+
 </div>
 
           <div class="table-wrap">
@@ -1470,17 +1506,14 @@
 
   document.getElementById(
     "infoPaginacao"
-  ).innerHTML = `
-    Página
-    <strong>
-      ${paginaAtualResultados}
-    </strong>
-    de
-    <strong>
-      ${totalPaginas}
-    </strong>
-    (${total} registros)
-  `;
+  ).innerHTML =
+    `Página ${paginaAtualResultados} de ${totalPaginas}
+     (${total.toLocaleString('pt-BR')} registros)`;
+
+  document.getElementById(
+    "infoPaginacaoCentro"
+  ).innerHTML =
+    `${paginaAtualResultados} / ${totalPaginas}`;
 }
 
    function paginaAnterior() {
