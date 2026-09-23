@@ -1363,6 +1363,7 @@
   const API_BASE = "https://ipeo-palma-da-mao.pedro-fillype.workers.dev/api";
   let usuarioLogado = null;
   let ultimoResultadoDetalhado = [];
+  let ultimoHistoricoIndicadores = [];
   let indicadorChart = null;
 
   const METAS = {
@@ -1934,17 +1935,21 @@ async function carregarDados() {
       );
     }
 
-    ultimoResultadoDetalhado = aplicarOrdenacao(
-      dados.resultados || []
-    );
+    ultimoHistoricoIndicadores =
+  dados.historico || [];
+
+ultimoResultadoDetalhado = [];
+
+renderCards(dados.kpis || []);
+
+renderTabela([]);
 
     console.log(
   "Primeiro registro:",
   ultimoResultadoDetalhado[0]
 );
 
-    renderCards(dados.kpis || []);
-    renderTabela(ultimoResultadoDetalhado);
+
 
     console.log("[IPEO] Carregamento concluído", {
       registros: ultimoResultadoDetalhado.length,
@@ -2519,28 +2524,40 @@ function abrirGraficoIndicador(indicador) {
   };
 
   // Guarda as linhas completas de cada mês.
-  const linhasPorMes = {};
+  const labels = mesesFixos.map(
+  mes => mesesLabel[mes]
+);
 
-  mesesFixos.forEach(mes => {
-    linhasPorMes[mes] = [];
-  });
+const registroPorMes = {};
 
-  for (const row of ultimoResultadoDetalhado) {
-    const mes = String(row.mes || "").padStart(2, "0");
+for (const item of ultimoHistoricoIndicadores) {
+  const mes = String(
+    item.mes || ""
+  ).padStart(2, "0");
 
-    if (!linhasPorMes[mes]) continue;
+  registroPorMes[mes] = item;
+}
 
-    linhasPorMes[mes].push(row);
+const valores = mesesFixos.map(mes => {
+  const item = registroPorMes[mes];
+
+  if (!item) {
+    return null;
   }
 
-  const labels = mesesFixos.map(mes => mesesLabel[mes]);
+  const valor = converterNumero(
+    item[chavePercentual]
+  );
 
-  const valores = mesesFixos.map(mes => {
-    const linhasMes = linhasPorMes[mes];
+  if (
+    valor === null ||
+    !Number.isFinite(valor)
+  ) {
+    return null;
+  }
 
-    if (!linhasMes?.length) {
-      return null;
-    }
+  return Number(valor.toFixed(2));
+});}
 
     /*
      * Cálculo correto:
