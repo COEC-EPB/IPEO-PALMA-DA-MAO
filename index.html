@@ -1677,28 +1677,46 @@ function aplicarEstadoFiltrosSalvo(){
     overlay.classList.remove("show");
   }
 
-  function showPage(page, btn = null) {
-    document.getElementById("dashboardPage").classList.toggle("hidden", page !== "dashboard");
-    document.getElementById("resultadosPage").classList.toggle("hidden", page !== "resultados");
-    document.getElementById("importacaoPage").classList.toggle("hidden", page !== "importacao");
+async function showPage(page, btn = null) {
 
-    document.getElementById("pageTitle").textContent =
-      page === "dashboard" ? "Dashboard" :
-      page === "resultados" ? "Resultados" :
-      "Importação";
+  document.getElementById("dashboardPage")
+    .classList.toggle("hidden", page !== "dashboard");
 
-    document.getElementById("pageSubtitle").textContent =
-      page === "dashboard"
-        ? "Acompanhe seus indicadores de forma rápida."
-        : page === "resultados"
-        ? "Detalhamento dos indicadores por mês."
-        : "Importe o Excel com os indicadores.";
+  document.getElementById("resultadosPage")
+    .classList.toggle("hidden", page !== "resultados");
 
-    document.querySelectorAll(".menu button").forEach(b => b.classList.remove("active"));
-    if (btn) btn.classList.add("active");
+  document.getElementById("importacaoPage")
+    .classList.toggle("hidden", page !== "importacao");
 
-    fecharMobileMenu();
+  document.getElementById("pageTitle").textContent =
+    page === "dashboard"
+      ? "Dashboard"
+      : page === "resultados"
+      ? "Resultados"
+      : "Importação";
+
+  document.getElementById("pageSubtitle").textContent =
+    page === "dashboard"
+      ? "Acompanhe seus indicadores de forma rápida."
+      : page === "resultados"
+      ? "Detalhamento dos indicadores por mês."
+      : "Importe o Excel com os indicadores.";
+
+  document
+    .querySelectorAll(".menu button")
+    .forEach(b => b.classList.remove("active"));
+
+  if (btn) {
+    btn.classList.add("active");
   }
+
+  // NOVO
+  if (page === "resultados") {
+    await carregarResultados();
+  }
+
+  fecharMobileMenu();
+}
 
   async function limparFiltros() {
   const fMat = document.getElementById("filtroMatricula");
@@ -1846,6 +1864,78 @@ function aplicarEstadoFiltrosSalvo(){
     document.getElementById("senha").value = "";
     limparLoginMsg();
   }
+
+   async function carregarResultados() {
+
+  const tbody =
+    document.getElementById(
+      "tbodyResultados"
+    );
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="17" class="empty">
+        Carregando resultados...
+      </td>
+    </tr>
+  `;
+
+  const params = new URLSearchParams();
+
+  if (usuarioLogado.isAdmin) {
+
+    const matricula =
+      document.getElementById("filtroMatricula")?.value?.trim();
+
+    const nome =
+      document.getElementById("filtroNome")?.value?.trim();
+
+    const regional =
+      document.getElementById("filtroRegional")?.value?.trim();
+
+    const polo =
+      document.getElementById("filtroPolo")?.value?.trim();
+
+    const gestor =
+      document.getElementById("filtroGestor")?.value?.trim();
+
+    const prestador =
+      document.getElementById("filtroPrestador")?.value?.trim();
+
+    const mes =
+      document.getElementById("filtroMes")?.value?.trim();
+
+    if (matricula) params.set("matricula", matricula);
+    if (nome) params.set("nome", nome);
+    if (regional) params.set("regional", regional);
+    if (polo) params.set("polo", polo);
+    if (gestor) params.set("gestor", gestor);
+    if (prestador) params.set("prestador", prestador);
+    if (mes) params.set("mes", mes);
+  }
+
+  const res = await fetch(
+    API_BASE +
+      "/ipeo-resultados" +
+      (params.toString()
+        ? `?${params.toString()}`
+        : ""),
+    {
+      headers: authHeaders()
+    }
+  );
+
+  const data = await res.json();
+
+  ultimoResultadoDetalhado =
+    aplicarOrdenacao(
+      data.resultados || []
+    );
+
+  renderTabela(
+    ultimoResultadoDetalhado
+  );
+}
 
   // =========================
   // Dados / render
