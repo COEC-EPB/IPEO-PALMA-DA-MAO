@@ -1553,6 +1553,87 @@ function aplicarEstadoFiltrosSalvo(){
     };
   }
 
+   async function apiFetch(caminho, opcoes = {}, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const inicio = performance.now();
+
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    const resposta = await fetch(API_BASE + caminho, {
+      ...opcoes,
+      signal: controller.signal,
+      cache: "no-store",
+      headers: {
+        ...authHeaders(),
+        ...(opcoes.headers || {})
+      }
+    });
+
+    const texto = await resposta.text();
+
+    const tempoSegundos = (
+      (performance.now() - inicio) / 1000
+    ).toFixed(2);
+
+    const tamanhoKB = (
+      new Blob([texto]).size / 1024
+    ).toFixed(2);
+
+    console.log(`[API] ${caminho}`, {
+      status: resposta.status,
+      tempo: `${tempoSegundos}s`,
+      tamanho: `${tamanhoKB} KB`
+    });
+
+    let dados;
+
+    try {
+      dados = texto ? JSON.parse(texto) : {};
+    } catch {
+      throw new Error(
+        "O servidor retornou uma resposta inválida."
+      );
+    }
+
+    if (!resposta.ok) {
+      throw new Error(
+        dados.error ||
+        dados.erro ||
+        `Erro HTTP ${resposta.status}`
+      );
+    }
+
+    return {
+      resposta,
+      dados,
+      tempoSegundos: Number(tempoSegundos),
+      tamanhoKB: Number(tamanhoKB)
+    };
+  } catch (erro) {
+    if (erro.name === "AbortError") {
+      throw new Error(
+        "A consulta demorou mais de 20 segundos. Verifique sua conexão e tente novamente."
+      );
+    }
+
+    if (
+      erro instanceof TypeError &&
+      String(erro.message).toLowerCase().includes("fetch")
+    ) {
+      throw new Error(
+        "Não foi possível conectar ao servidor. Verifique sua internet e tente novamente."
+      );
+    }
+
+    throw erro;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
   function formatPercent(v) {
     const n = Number(v || 0);
     return `${n.toFixed(2).replace(".", ",")}%`;
@@ -1768,88 +1849,152 @@ function aplicarEstadoFiltrosSalvo(){
   // =========================
   // Dados / render
   // =========================
-  async function carregarDados() {
-    if (!usuarioLogado) return;
+  
+  let requisicaoDadosAtual = 0;
 
-    const cardsMIP = document.getElementById("cardsMIP");
-    const cardsIPEO = document.getElementById("cardsIPEO");
-    const tbody = document.getElementById("tbodyResultados");
 
-    cardsMIP.classList.add("loading");
-    cardsIPEO.classList.add("loading");
+function escapeHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
-    tbody.innerHTML = `<tr><td colspan="17" class="empty">Carregando...</td></tr>`;
+async function carregarDados() {
+  if (!usuarioLogado) return;
 
-    try {
-      const params = new URLSearchParams();
+  const idRequisicao = ++requisicaoDadosAtual;
 
-      if (usuarioLogado.isAdmin) {
-        const matricula = document.getElementById("filtroMatricula")?.value.trim();
-        const mes = document.getElementById("filtroMes")?.value.trim();
-        const nome = document.getElementById("filtroNome")?.value.trim();
-        const regional = document.getElementById("filtroRegional")?.value.trim();
-        const polo = document.getElementById("filtroPolo")?.value.trim();
-        const gestor = document.getElementById("filtroGestor")?.value.trim();
-        const prestador = document.getElementById("filtroPrestador")?.value.trim();
-        
-        if (matricula) params.set("matricula", matricula);
-        if (mes) params.set("mes", mes);
-        if (nome) params.set("nome", nome);
-        if (regional) params.set("regional", regional);
-        if (polo) params.set("polo", polo);
-        if (gestor) params.set("gestor", gestor);
-        if (prestador) params.set("prestador", prestador);
-      }
+  const cardsMIP = document.getElementById("cardsMIP");
+  const cardsIPEO = document.getElementById("cardsIPEO");
+  const tbody = document.getElementById("tbodyResultados");
 
-      const url = API_BASE + "/ipeo-dashboard" + (params.toString() ? `?${params.toString()}` : "");
-      const res = await fetch(url, { headers: authHeaders() });
-      const data = await res.json();
+  cardsMIP.classList.add("loading");
+  cardsIPEO.classList.add("loading");
 
-      if (!res.ok || !data.ok) throw new Error(data.error || "Erro ao carregar indicadores");
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="17" class="empty">
+        <i class="bi bi-arrow-clockwise"></i>
+        Carregando indicadores...
+      </td>
+    </tr>
+  `;
 
-      ultimoResultadoDetalhado = aplicarOrdenacao(data.resultados || []);
-      renderCards(data.kpis || []);
-      renderTabela(ultimoResultadoDetalhado);
-    } catch (err) {
-      ultimoResultadoDetalhado = [];
-      renderCards([]);
-      tbody.innerHTML = `<tr><td colspan="17" class="empty">${err.message || "Erro ao carregar dados."}</td></tr>`;
-    } finally {
+  try {
+    const params = new URLSearchParams();
+
+    if (usuarioLogado.isAdmin) {
+      const campos = {
+        matricula: "filtroMatricula",
+        mes: "filtroMes",
+        nome: "filtroNome",
+        regional: "filtroRegional",
+        polo: "filtroPolo",
+        gestor: "filtroGestor",
+        prestador: "filtroPrestador"
+      };
+
+      Object.entries(campos).forEach(([parametro, idElemento]) => {
+        const valor = document
+          .getElementById(idElemento)
+          ?.value
+          ?.trim();
+
+        if (valor) {
+          params.set(parametro, valor);
+        }
+      });
+    }
+
+    const caminho =
+      "/ipeo-dashboard" +
+      (params.toString() ? `?${params.toString()}` : "");
+
+    const {
+      dados,
+      tempoSegundos,
+      tamanhoKB
+    } = await apiFetch(caminho);
+
+    /*
+     * Evita que uma busca antiga sobrescreva uma busca mais nova.
+     * Isso pode acontecer quando o administrador muda filtros
+     * rapidamente em uma conexão móvel.
+     */
+    if (idRequisicao !== requisicaoDadosAtual) {
+      return;
+    }
+
+    if (!dados.ok) {
+      throw new Error(
+        dados.error || "Erro ao carregar indicadores."
+      );
+    }
+
+    ultimoResultadoDetalhado = aplicarOrdenacao(
+      dados.resultados || []
+    );
+
+    renderCards(dados.kpis || []);
+    renderTabela(ultimoResultadoDetalhado);
+
+    console.log("[IPEO] Carregamento concluído", {
+      registros: ultimoResultadoDetalhado.length,
+      tempo: `${tempoSegundos}s`,
+      resposta: `${tamanhoKB} KB`
+    });
+
+    if (tamanhoKB > 1000) {
+      console.warn(
+        "[IPEO] A resposta ultrapassou 1 MB. " +
+        "É recomendável dividir dashboard, tabela e gráficos."
+      );
+    }
+  } catch (erro) {
+    if (idRequisicao !== requisicaoDadosAtual) {
+      return;
+    }
+
+    console.error("[IPEO] Erro ao carregar dados:", erro);
+
+    ultimoResultadoDetalhado = [];
+    renderCards([]);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="17" class="empty">
+          <div style="color:#b3261e;font-weight:700;margin-bottom:8px;">
+            <i class="bi bi-exclamation-triangle"></i>
+            Não foi possível carregar os dados
+          </div>
+
+          <div style="margin-bottom:12px;">
+            ${escapeHtml(
+              erro.message || "Erro ao carregar indicadores."
+            )}
+          </div>
+
+          <button
+            class="btn btn-soft btn-sm"
+            type="button"
+            onclick="carregarDados()"
+          >
+            <i class="bi bi-arrow-clockwise"></i>
+            Tentar novamente
+          </button>
+        </td>
+      </tr>
+    `;
+  } finally {
+    if (idRequisicao === requisicaoDadosAtual) {
       cardsMIP.classList.remove("loading");
       cardsIPEO.classList.remove("loading");
     }
   }
-
-  function renderTabela(lista) {
-    const el = document.getElementById("tbodyResultados");
-
-    if (!lista.length) {
-      el.innerHTML = `<tr><td colspan="17" class="empty">Nenhum resultado encontrado.</td></tr>`;
-      return;
-    }
-
-    el.innerHTML = lista.map(item => `
-      <tr>
-        <td>${item.regional || "-"}</td>
-        <td>${item.polo || "-"}</td>
-        <td>${item.matricula || "-"}</td>
-        <td>${item.nome || "-"}</td>
-        <td>${item.prestador || "-"}</td>
-        <td>${item.mes || "-"}</td>
-        <td>${formatPercent(normalizarPercentual(item.ipeo))}</td>
-        <td>${formatPercent(normalizarPercentual(item.di))}</td>
-        <td>${formatPercent(normalizarPercentual(item.roe))}</td>
-        <td>${formatPercent(normalizarPercentual(item.rnt))}</td>
-        <td>${formatPercent(normalizarPercentual(item.ioc))}</td>
-        <td>${formatPercent(normalizarPercentual(item.isf))}</td>
-        <td>${formatPercent(normalizarPercentual(item.rov))}</td>
-        <td>${formatPercent(normalizarPercentual(item.produtividade))}</td>
-        <td>${formatPercent(normalizarPercentual(item.eficiencia))}</td>
-        <td>${formatPercent(normalizarPercentual(item.utilizacao))}</td>
-        <td>${formatNumero(item.tms)}</td>
-      </tr>
-    `).join("");
-  }
+}
 
   function renderCards(lista) {
     const elMIP = document.getElementById("cardsMIP");
