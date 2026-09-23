@@ -1157,6 +1157,52 @@
   </div>
 </div>
 
+          <div
+  style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:12px;
+  "
+>
+
+  <div>
+    <label
+      style="
+        font-size:13px;
+        font-weight:600;
+        color:#64748b;
+      "
+    >
+      Registros por página
+    </label>
+
+    <select
+      id="filtroPaginacao"
+      class="ordem-select"
+      style="width:120px;"
+      onchange="renderPaginaAtual()"
+    >
+      <option value="50">50</option>
+      <option value="100" selected>100</option>
+      <option value="300">300</option>
+    </select>
+  </div>
+
+  <div
+    id="infoPaginacao"
+    style="
+      font-size:13px;
+      color:#64748b;
+      font-weight:600;
+    "
+  >
+    Página 1
+  </div>
+
+</div>
 
           <div class="table-wrap">
             <table>
@@ -1365,6 +1411,7 @@
   let ultimoResultadoDetalhado = [];
   let ultimoHistoricoIndicadores = [];
   let indicadorChart = null;
+  let paginaAtualResultados = 1;
 
   const METAS = {
     IPEO: 91.50,
@@ -1379,6 +1426,101 @@
     "UTILIZAÇÃO": 86.75,
     TMS: 19
   };
+
+   function renderPaginaAtual() {
+
+  const limite = Number(
+    document.getElementById(
+      "filtroPaginacao"
+    )?.value || 100
+  );
+
+  const inicio =
+    (paginaAtualResultados - 1) * limite;
+
+  const fim =
+    inicio + limite;
+
+  renderTabela(
+    ultimoResultadoDetalhado.slice(
+      inicio,
+      fim
+    )
+  );
+
+  atualizarInfoPaginacao();
+}
+
+   function atualizarInfoPaginacao() {
+
+  const limite = Number(
+    document.getElementById(
+      "filtroPaginacao"
+    )?.value || 100
+  );
+
+  const total =
+    ultimoResultadoDetalhado.length;
+
+  const totalPaginas =
+    Math.max(
+      1,
+      Math.ceil(total / limite)
+    );
+
+  document.getElementById(
+    "infoPaginacao"
+  ).innerHTML = `
+    Página
+    <strong>
+      ${paginaAtualResultados}
+    </strong>
+    de
+    <strong>
+      ${totalPaginas}
+    </strong>
+    (${total} registros)
+  `;
+}
+
+   function paginaAnterior() {
+
+  if (
+    paginaAtualResultados <= 1
+  ) {
+    return;
+  }
+
+  paginaAtualResultados--;
+
+  renderPaginaAtual();
+}
+
+function proximaPagina() {
+
+  const limite = Number(
+    document.getElementById(
+      "filtroPaginacao"
+    )?.value || 100
+  );
+
+  const totalPaginas =
+    Math.ceil(
+      ultimoResultadoDetalhado.length /
+      limite
+    );
+
+  if (
+    paginaAtualResultados >=
+    totalPaginas
+  ) {
+    return;
+  }
+
+  paginaAtualResultados++;
+
+  renderPaginaAtual();
+}
 
   function setOptions(selectEl, values, placeholder = "Todos") {
   if (!selectEl) return;
