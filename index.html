@@ -1995,7 +1995,80 @@ async function carregarDados() {
     }
   }
 }
+const LIMITE_TABELA_DESKTOP = 500;
+const LIMITE_TABELA_MOBILE = 100;
 
+function renderTabela(lista) {
+  const el = document.getElementById("tbodyResultados");
+
+  if (!Array.isArray(lista) || !lista.length) {
+    el.innerHTML = `
+      <tr>
+        <td colspan="17" class="empty">
+          Nenhum resultado encontrado.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const isMobile = window.innerWidth <= 980;
+
+  const limite = isMobile
+    ? LIMITE_TABELA_MOBILE
+    : LIMITE_TABELA_DESKTOP;
+
+  const resultadosVisiveis = lista.slice(0, limite);
+
+  const quantidadeOculta =
+    lista.length - resultadosVisiveis.length;
+
+  el.innerHTML = resultadosVisiveis.map(item => `
+    <tr>
+      <td>${escapeHtml(item.regional || "-")}</td>
+      <td>${escapeHtml(item.polo || "-")}</td>
+      <td>${escapeHtml(item.matricula || "-")}</td>
+      <td>${escapeHtml(item.nome || "-")}</td>
+      <td>${escapeHtml(item.prestador || "-")}</td>
+      <td>${escapeHtml(item.mes || "-")}</td>
+
+      <td>${formatPercent(normalizarPercentual(item.ipeo))}</td>
+      <td>${formatPercent(normalizarPercentual(item.di))}</td>
+      <td>${formatPercent(normalizarPercentual(item.roe))}</td>
+      <td>${formatPercent(normalizarPercentual(item.rnt))}</td>
+      <td>${formatPercent(normalizarPercentual(item.ioc))}</td>
+      <td>${formatPercent(normalizarPercentual(item.isf))}</td>
+      <td>${formatPercent(normalizarPercentual(item.rov))}</td>
+
+      <td>${formatPercent(normalizarPercentual(item.produtividade))}</td>
+      <td>${formatPercent(normalizarPercentual(item.eficiencia))}</td>
+      <td>${formatPercent(normalizarPercentual(item.utilizacao))}</td>
+
+      <td>${formatNumero(item.tms)}</td>
+    </tr>
+  `).join("");
+
+  if (quantidadeOculta > 0) {
+    el.innerHTML += `
+      <tr>
+        <td colspan="17" class="empty">
+          <i class="bi bi-info-circle"></i>
+          Exibindo apenas
+          <strong>${resultadosVisiveis.length}</strong>
+          de
+          <strong>${lista.length}</strong>
+          registros para manter o desempenho da página.
+
+          <br><br>
+
+          Utilize os filtros ou o botão
+          <strong>Baixar Excel</strong>
+          para acessar todos os resultados.
+        </td>
+      </tr>
+    `;
+  }
+}
   function renderCards(lista) {
     const elMIP = document.getElementById("cardsMIP");
     const elIPEO = document.getElementById("cardsIPEO");
@@ -2176,6 +2249,7 @@ if (gestor) nomeArquivo += `_gestor_${gestor.replace(/\s+/g, "_")}`;
 
   return { min, max, step };
 }
+   
 
 // ========================================================
 // CONFIGURAÇÃO DOS CÁLCULOS REAIS DOS INDICADORES
