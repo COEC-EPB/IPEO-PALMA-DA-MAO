@@ -2074,9 +2074,9 @@ async function showPage(page, btn = null) {
       data.resultados || []
     );
 
-  renderTabela(
-    ultimoResultadoDetalhado
-  );
+  paginaAtualResultados = 1;
+
+renderPaginaAtual();
 }
 
   // =========================
