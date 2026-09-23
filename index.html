@@ -1938,6 +1938,11 @@ async function carregarDados() {
       dados.resultados || []
     );
 
+    console.log(
+  "Primeiro registro:",
+  ultimoResultadoDetalhado[0]
+);
+
     renderCards(dados.kpis || []);
     renderTabela(ultimoResultadoDetalhado);
 
