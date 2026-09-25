@@ -1677,11 +1677,11 @@ async function carregarOpcoesFiltros() {
     setOptions(selPolo, data.polos || [], "Todos");
     setOptions(selGestor, data.gestores || [], "Todos");
     setOptions(selPrest, data.prestadores || [], "Todos");
-
+    console.log("[FILTROS RECEBIDOS]", data);
   } finally {
     carregandoFiltros = false;
   }
-  console.log("[FILTROS RECEBIDOS]", data);
+  
 }
 
 // Quando muda Regional, recarrega Polos/Prestadores
