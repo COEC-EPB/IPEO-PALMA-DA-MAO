@@ -1681,13 +1681,7 @@ async function carregarOpcoesFiltros() {
   } finally {
     carregandoFiltros = false;
   }
-  console.log("[FILTROS]", {
-  regionalSelecionada: regional,
-  poloSelecionado: polo,
-  gestores: data.gestores,
-  quantidadeGestores:
-    data.gestores?.length || 0
-});
+  console.log("[FILTROS RECEBIDOS]", data);
 }
 
 // Quando muda Regional, recarrega Polos/Prestadores
