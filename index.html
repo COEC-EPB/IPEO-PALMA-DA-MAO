@@ -1061,7 +1061,10 @@
 
       <div>
   <label for="filtroGestor">Gestor</label>
-  <select id="filtroGestor" class="input input-sm" onchange="carregarDados()">
+  <select
+  id="filtroGestor"
+  class="input input-sm"
+>
     <option value="">Todos</option>
   </select>
 </div>
@@ -1070,7 +1073,10 @@
 
 <div>
   <label for="filtroPrestador">Prestador</label>
-  <select id="filtroPrestador" class="input input-sm" onchange="carregarDados()">
+  <select
+  id="filtroPrestador"
+  class="input input-sm"
+>
     <option value="">Todos</option>
   </select>
 </div>
@@ -1097,7 +1103,7 @@
           </div>
 
           
-<button class="btn btn-primary btn-sm btn-full" onclick="carregarDados()">
+<button class="btn btn-primary btn-sm btn-full" onclick="aplicarFiltros()">
   <i class="bi bi-funnel"></i> Aplicar
 </button>
 
@@ -1148,7 +1154,7 @@
   </label>
 
   <div class="ordem-select-wrap">
-    <select id="filtroOrdenacao" class="ordem-select" onchange="carregarDados()">
+    <select id="filtroOrdenacao" class="ordem-select" onchange="ordenarResultadosCarregados()">
       <option value="">Padrão</option>
       <option value="IPEO">Maior IPEO</option>
       <option value="MIP">Maior MIP (Produtividade)</option>
@@ -1183,7 +1189,7 @@
       id="filtroPaginacao"
       class="ordem-select"
       style="width:120px;"
-      onchange="renderPaginaAtual()"
+      onchange="alterarQuantidadePagina()"
     >
       <option value="50">50</option>
       <option value="100" selected>100</option>
@@ -1443,11 +1449,12 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
  <script>
   const API_BASE = "https://ipeo-palma-da-mao.pedro-fillype.workers.dev/api";
-  let usuarioLogado = null;
-  let ultimoResultadoDetalhado = [];
-  let ultimoHistoricoIndicadores = [];
-  let indicadorChart = null;
-  let paginaAtualResultados = 1;
+let usuarioLogado = null;
+let ultimoResultadoDetalhado = [];
+let ultimoHistoricoIndicadores = [];
+let indicadorChart = null;
+let paginaAtualResultados = 1;
+let paginaAtualSistema = "dashboard";
 
   const METAS = {
     IPEO: 91.50,
@@ -1463,27 +1470,45 @@
     TMS: 19
   };
 
-   function renderPaginaAtual() {
-
+function renderPaginaAtual() {
   const limite = Number(
-    document.getElementById(
-      "filtroPaginacao"
-    )?.value || 100
+    document.getElementById("filtroPaginacao")
+      ?.value || 100
   );
+
+  const total =
+    ultimoResultadoDetalhado.length;
+
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(total / limite)
+  );
+
+  /*
+   * Corrige automaticamente uma página inválida.
+   * Exemplo: estava na página 22 e o filtro
+   * deixou apenas 3 páginas.
+   */
+  if (paginaAtualResultados > totalPaginas) {
+    paginaAtualResultados = totalPaginas;
+  }
+
+  if (paginaAtualResultados < 1) {
+    paginaAtualResultados = 1;
+  }
 
   const inicio =
     (paginaAtualResultados - 1) * limite;
 
-  const fim =
-    inicio + limite;
+  const fim = inicio + limite;
 
-  renderTabela(
+  const registrosPagina =
     ultimoResultadoDetalhado.slice(
       inicio,
       fim
-    )
-  );
+    );
 
+  renderTabela(registrosPagina);
   atualizarInfoPaginacao();
 }
 
@@ -1528,6 +1553,10 @@
 
   renderPaginaAtual();
 }
+   function alterarQuantidadePagina() {
+  paginaAtualResultados = 1;
+  renderPaginaAtual();
+}
 
 function proximaPagina() {
 
@@ -1552,6 +1581,15 @@ function proximaPagina() {
 
   paginaAtualResultados++;
 
+  renderPaginaAtual();
+}
+   function ordenarResultadosCarregados() {
+  ultimoResultadoDetalhado =
+    aplicarOrdenacao(
+      ultimoResultadoDetalhado
+    );
+
+  paginaAtualResultados = 1;
   renderPaginaAtual();
 }
 
@@ -1643,14 +1681,72 @@ async function carregarOpcoesFiltros() {
   } finally {
     carregandoFiltros = false;
   }
+  console.log("[FILTROS]", {
+  regionalSelecionada: regional,
+  poloSelecionado: polo,
+  gestores: data.gestores,
+  quantidadeGestores:
+    data.gestores?.length || 0
+});
 }
 
 // Quando muda Regional, recarrega Polos/Prestadores
 async function onFiltroRegionalChange() {
-  const selPolo = document.getElementById("filtroPolo");
-  if (selPolo) selPolo.value = ""; // reset polo ao trocar regional
+  const selPolo =
+    document.getElementById("filtroPolo");
+
+  const selGestor =
+    document.getElementById("filtroGestor");
+
+  const selPrestador =
+    document.getElementById("filtroPrestador");
+
+  if (selPolo) {
+    selPolo.value = "";
+  }
+
+  if (selGestor) {
+    selGestor.value = "";
+  }
+
+  if (selPrestador) {
+    selPrestador.value = "";
+  }
+
   await carregarOpcoesFiltros();
-  carregarDados();
+}
+
+async function onFiltroPoloChange() {
+  const poloSelecionado =
+    document.getElementById("filtroPolo")
+      ?.value || "";
+
+  const selGestor =
+    document.getElementById("filtroGestor");
+
+  const selPrestador =
+    document.getElementById("filtroPrestador");
+
+  if (selGestor) {
+    selGestor.value = "";
+  }
+
+  if (selPrestador) {
+    selPrestador.value = "";
+  }
+
+  await carregarOpcoesFiltros();
+
+  /*
+   * Garante que o Polo permaneça selecionado
+   * depois da reconstrução das opções.
+   */
+  const selPolo =
+    document.getElementById("filtroPolo");
+
+  if (selPolo && poloSelecionado) {
+    selPolo.value = poloSelecionado;
+  }
 }
 
 // Quando muda Polo, pode refinar prestadores também
@@ -1853,14 +1949,18 @@ function aplicarEstadoFiltrosSalvo(){
   }
 
 async function showPage(page, btn = null) {
+  paginaAtualSistema = page;
 
-  document.getElementById("dashboardPage")
+  document
+    .getElementById("dashboardPage")
     .classList.toggle("hidden", page !== "dashboard");
 
-  document.getElementById("resultadosPage")
+  document
+    .getElementById("resultadosPage")
     .classList.toggle("hidden", page !== "resultados");
 
-  document.getElementById("importacaoPage")
+  document
+    .getElementById("importacaoPage")
     .classList.toggle("hidden", page !== "importacao");
 
   document.getElementById("pageTitle").textContent =
@@ -1879,40 +1979,59 @@ async function showPage(page, btn = null) {
 
   document
     .querySelectorAll(".menu button")
-    .forEach(b => b.classList.remove("active"));
+    .forEach(botao => {
+      botao.classList.remove("active");
+    });
 
   if (btn) {
     btn.classList.add("active");
   }
 
-  // NOVO
+  fecharMobileMenu();
+
   if (page === "resultados") {
+    paginaAtualResultados = 1;
     await carregarResultados();
   }
+}
+   async function aplicarFiltros() {
+  paginaAtualResultados = 1;
 
-  fecharMobileMenu();
+  await carregarDados();
+
+  if (paginaAtualSistema === "resultados") {
+    await carregarResultados();
+  }
 }
 
   async function limparFiltros() {
-  const fMat = document.getElementById("filtroMatricula");
-  const fMes = document.getElementById("filtroMes");
-  const fNome = document.getElementById("filtroNome");
-  const fRegional = document.getElementById("filtroRegional");
-  const fPolo = document.getElementById("filtroPolo");
-  const fGestor = document.getElementById("filtroGestor");
-  const fPrest = document.getElementById("filtroPrestador");
+  const ids = [
+    "filtroMatricula",
+    "filtroMes",
+    "filtroNome",
+    "filtroRegional",
+    "filtroPolo",
+    "filtroGestor",
+    "filtroPrestador"
+  ];
 
-  if (fPrest) fPrest.value = "";
-  if (fMat) fMat.value = "";
-  if (fMes) fMes.value = "";
-  if (fNome) fNome.value = "";
-  if (fRegional) fRegional.value = "";
-  if (fPolo) fPolo.value = "";
-  if (fGestor) fGestor.value = "";
+  ids.forEach(id => {
+    const elemento =
+      document.getElementById(id);
+
+    if (elemento) {
+      elemento.value = "";
+    }
+  });
+
+  paginaAtualResultados = 1;
 
   await carregarOpcoesFiltros();
+  await carregarDados();
 
-  carregarDados();
+  if (paginaAtualSistema === "resultados") {
+    await carregarResultados();
+  }
 }
 
   // =========================
@@ -2287,18 +2406,9 @@ function renderTabela(lista) {
     return;
   }
 
-  const isMobile = window.innerWidth <= 980;
+  
 
-  const limite = isMobile
-    ? LIMITE_TABELA_MOBILE
-    : LIMITE_TABELA_DESKTOP;
-
-  const resultadosVisiveis = lista.slice(0, limite);
-
-  const quantidadeOculta =
-    lista.length - resultadosVisiveis.length;
-
-  el.innerHTML = resultadosVisiveis.map(item => `
+  el.innerHTML = lista.map(item => `
     <tr>
       <td>${escapeHtml(item.regional || "-")}</td>
       <td>${escapeHtml(item.polo || "-")}</td>
@@ -2323,26 +2433,7 @@ function renderTabela(lista) {
     </tr>
   `).join("");
 
-  if (quantidadeOculta > 0) {
-    el.innerHTML += `
-      <tr>
-        <td colspan="17" class="empty">
-          <i class="bi bi-info-circle"></i>
-          Exibindo apenas
-          <strong>${resultadosVisiveis.length}</strong>
-          de
-          <strong>${lista.length}</strong>
-          registros para manter o desempenho da página.
-
-          <br><br>
-
-          Utilize os filtros ou o botão
-          <strong>Baixar Excel</strong>
-          para acessar todos os resultados.
-        </td>
-      </tr>
-    `;
-  }
+  
 }
   function renderCards(lista) {
     const elMIP = document.getElementById("cardsMIP");
